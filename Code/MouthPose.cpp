@@ -92,7 +92,7 @@ int main()
     // Load face detection and pose estimation models.
     frontal_face_detector detector = get_frontal_face_detector();
     shape_predictor predictor;
-    deserialize("../../models/shape_predictor_68_face_landmarks.dat") >> predictor;
+    deserialize("models/shape_predictor_68_face_landmarks.dat") >> predictor;
 
     // initiate the tickCounter
     int count = 0;
