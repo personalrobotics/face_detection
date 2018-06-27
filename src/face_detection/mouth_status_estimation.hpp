@@ -26,12 +26,14 @@ std::vector<cv::Point2d> get2dmouthPoints(dlib::full_object_detection &d)
 
 bool checkMouth(dlib::full_object_detection &shape){
     bool mouthOpen;
-
-    auto mouthPoints = get2dmouthPoints(shape);
+    // Store all the mouth points
+    auto mouthPoints = get2dmouthPoints(shape); 
+    // calculate the distance between the inner parts of the lower and upper lips 
     float lipDist = (float) sqrt(pow((mouthPoints[10].x - mouthPoints[7].x),2)+pow((mouthPoints[10].y - mouthPoints[7].y),2));
+    // calculate average lip thickness
     float AvgLipThickness = (float) sqrt(pow((mouthPoints[1].x - mouthPoints[7].x),2)+pow((mouthPoints[1].y - mouthPoints[7].y),2))/2+
     sqrt(pow((mouthPoints[4].x - mouthPoints[10].x),2)+pow((mouthPoints[4].y - mouthPoints[10].y),2))/2;
-    
+    // check how the current lip thickness compares to the average lip thickness
     if (lipDist >= 1.5*AvgLipThickness){
         mouthOpen = true;
     } else {
