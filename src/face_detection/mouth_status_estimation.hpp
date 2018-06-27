@@ -29,10 +29,10 @@ bool checkMouth(dlib::full_object_detection &shape){
 
     auto mouthPoints = get2dmouthPoints(shape);
     float lipDist = (float) sqrt(pow((mouthPoints[10].x - mouthPoints[7].x),2)+pow((mouthPoints[10].y - mouthPoints[7].y),2));
-    float lipThickness = (float) sqrt(pow((mouthPoints[1].x - mouthPoints[7].x),2)+pow((mouthPoints[1].y - mouthPoints[7].y),2))/2+
+    float AvgLipThickness = (float) sqrt(pow((mouthPoints[1].x - mouthPoints[7].x),2)+pow((mouthPoints[1].y - mouthPoints[7].y),2))/2+
     sqrt(pow((mouthPoints[4].x - mouthPoints[10].x),2)+pow((mouthPoints[4].y - mouthPoints[10].y),2))/2;
     
-    if (lipDist > lipThickness){
+    if (lipDist >= 1.5*AvgLipThickness){
         mouthOpen = true;
     } else {
         mouthOpen = false;
