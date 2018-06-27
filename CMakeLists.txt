@@ -13,4 +13,4 @@ MACRO(add_example name)
   TARGET_LINK_LIBRARIES(${name} ${OpenCV_LIBS} dlib)
 ENDMACRO()
 
-add_example(MouthPose)
+add_example(mouth_pose)

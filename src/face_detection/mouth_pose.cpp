@@ -5,7 +5,7 @@
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/image_processing.h>
 #include <dlib/gui_widgets.h>
-#include "renderFace.hpp"
+#include "render_face.hpp"
 #include "mouth_status_estimation.hpp"
 
 using namespace dlib;
