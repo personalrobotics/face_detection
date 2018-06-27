@@ -140,4 +140,9 @@ https://software.intel.com/en-us/realsense/d400/get-started
 
 5) CMake
 
+# Pre-trained facial landmark model required
+
+Include the path of this file in the code provided and make changes accroding to where the model is placed. It can be found in the google drive link below.
+
+https://drive.google.com/open?id=1QU6L3vHeN24hwjQ1pVxuNKtbJj-fTvql
 
