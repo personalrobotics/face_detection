@@ -43,7 +43,7 @@ sudo apt-get install libvorbis-dev libxvidcore-dev \
 sudo apt-get install libopencore-amrnb-dev libopencore-amrwb-dev \
 sudo apt-get install x264 v4l-utils 
 
-// Optional dependencies
+// Optional dependencies \
 sudo apt-get install libprotobuf-dev protobuf-compiler \
 sudo apt-get install libgoogle-glog-dev libgflags-dev \
 sudo apt-get install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen 
