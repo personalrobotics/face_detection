@@ -32,10 +32,10 @@ sudo apt-get install libjpeg8-dev libjasper-dev libpng12-dev
 
 sudo apt-get install libtiff5-dev
 
-sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev
-sudo apt-get install libxine2-dev libv4l-dev
-sudo apt-get install libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev
-sudo apt-get install libqt4-dev libgtk2.0-dev libtbb-dev
+sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev \
+sudo apt-get install libxine2-dev libv4l-dev \
+sudo apt-get install libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev \
+sudo apt-get install libqt4-dev libgtk2.0-dev libtbb-dev \
 sudo apt-get install libatlas-base-dev
 sudo apt-get install libfaac-dev libmp3lame-dev libtheora-dev
 sudo apt-get install libvorbis-dev libxvidcore-dev
