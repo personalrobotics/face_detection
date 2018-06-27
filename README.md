@@ -48,29 +48,6 @@ sudo apt-get install libprotobuf-dev protobuf-compiler \
 sudo apt-get install libgoogle-glog-dev libgflags-dev \
 sudo apt-get install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen 
 
-2) Dlib
-
-Step 1 : Install OS Libraries
-
-sudo apt-get install build-essential cmake pkg-config \
-sudo apt-get install libx11-dev libatlas-base-dev \
-sudo apt-get install libgtk-3-dev libboost-python-dev   
-
-Step 2 : Compile Dlib C++ binaries
-
-wget  http://dlib.net/files/dlib-19.4.tar.bz2
-tar xvf dlib-19.4.tar.bz2
-cd dlib-19.4/
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
-sudo make install
-sudo ldconfig
-cd ..
-
-pkg-config --libs --cflags dlib-1
-
 Step 3 : Download opencv and opencv_contrib
 
 We will download opencv and opencv_contrib packages from their github repositories. 
@@ -125,6 +102,29 @@ make -j4
 sudo make install \
 sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf' \
 sudo ldconfig 
+
+2) Dlib
+
+Step 1 : Install OS Libraries
+
+sudo apt-get install build-essential cmake pkg-config \
+sudo apt-get install libx11-dev libatlas-base-dev \
+sudo apt-get install libgtk-3-dev libboost-python-dev   
+
+Step 2 : Compile Dlib C++ binaries
+
+wget  http://dlib.net/files/dlib-19.4.tar.bz2
+tar xvf dlib-19.4.tar.bz2
+cd dlib-19.4/
+mkdir build
+cd build
+cmake ..
+cmake --build . --config Release
+sudo make install
+sudo ldconfig
+cd ..
+
+pkg-config --libs --cflags dlib-1
 
 3) ROS
 
