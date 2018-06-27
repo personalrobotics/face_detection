@@ -1,7 +1,7 @@
-# face_detection
+# Face Detection
 Repository for detecting faces (head pose, mouth etc.)
 
-Software Versions:
+# Software Versions:
 
 Ubuntu 16.04
 C++11
@@ -9,7 +9,7 @@ OpenCV 2.7
 Dlib 19.4
 ROS kinetic 
 
-Software Dependencies and Installation Instructions:
+# Software Dependencies and Installation Instructions:
 
 1) OpenCV
 
@@ -20,15 +20,15 @@ sudo apt-get upgrade
 
 Step 2 : Install OS libraries 
 
-# remove any previous installations of x264
+// remove any previous installations of x264
 sudo apt-get remove x264 libx264-dev
 
-# we will install dependencies now
+// we will install dependencies now
 sudo apt-get install build-essential checkinstall cmake pkg-config yasm
 sudo apt-get install git gfortran
 sudo apt-get install libjpeg8-dev libjasper-dev libpng12-dev
 
-# If you are using Ubuntu 16.04
+// If you are using Ubuntu 16.04
 sudo apt-get install libtiff5-dev
 
 sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev
@@ -41,7 +41,7 @@ sudo apt-get install libvorbis-dev libxvidcore-dev
 sudo apt-get install libopencore-amrnb-dev libopencore-amrwb-dev
 sudo apt-get install x264 v4l-utils
 
-# Optional dependencies
+// Optional dependencies
 sudo apt-get install libprotobuf-dev protobuf-compiler
 sudo apt-get install libgoogle-glog-dev libgflags-dev
 sudo apt-get install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
@@ -116,9 +116,9 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 
 Step 4.3 : Compile and Install
 
-# find out number of CPU cores in your machine
+// find out number of CPU cores in your machine
 nproc
-# substitute 4 by output of nproc
+// substitute 4 by output of nproc
 make -j4
 sudo make install
 sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
