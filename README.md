@@ -20,16 +20,16 @@ sudo apt-get upgrade
 
 Step 2 : Install OS libraries 
 
-// remove any previous installations of x264
+// remove any previous installations of x264 \
 sudo apt-get remove x264 libx264-dev 
 
-// we will install dependencies now
+// we will install dependencies now \
 
 sudo apt-get install build-essential checkinstall cmake pkg-config yasm \
 sudo apt-get install git gfortran \
 sudo apt-get install libjpeg8-dev libjasper-dev libpng12-dev 
 
-// If you are using Ubuntu 16.04
+// If you are using Ubuntu 16.04 \
 
 sudo apt-get install libtiff5-dev
 
@@ -82,7 +82,7 @@ cd build
 
 Step 4.2 : Run CMake
 
-cmake -D CMAKE_BUILD_TYPE=RELEASE \
+"cmake -D CMAKE_BUILD_TYPE=RELEASE \
 -D CMAKE_INSTALL_PREFIX=/usr/local \
 -D INSTALL_C_EXAMPLES=ON \
 -D INSTALL_PYTHON_EXAMPLES=ON \
@@ -91,7 +91,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 -D WITH_QT=ON \
 -D WITH_OPENGL=ON \
 -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
--D BUILD_EXAMPLES=ON ..
+-D BUILD_EXAMPLES=ON .."
 
 Step 4.3 : Compile and Install
 
