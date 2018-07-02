@@ -20,10 +20,10 @@ sudo apt-get upgrade
 
 Step 2 : Install OS libraries 
 
-// remove any previous installations of x264 \
+## remove any previous installations of x264 \
 sudo apt-get remove x264 libx264-dev 
 
-// we will install dependencies now \
+## we will install dependencies now \
 
 sudo apt-get install build-essential checkinstall cmake pkg-config yasm \
 sudo apt-get install git gfortran \
