@@ -189,8 +189,33 @@ int main(int argc, char **argv)
    std::string mMarkerTopic = "/camera/color/image_raw";
 
    deserialize("shape_predictor_68_face_landmarks.dat") >> predictor;
+    
+   ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
 
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+    
+  int count = 0;
+    
+  while (ros::ok())
+    {
+  
+     std_msgs::String msg;
+   
+     std::stringstream ss;
+     ss << "hello world " << count;
+     msg.data = ss.str();
+   
+     ROS_INFO("%s", msg.data.c_str());
+   
+
+     chatter_pub.publish(msg);
+ 
+     ros::spinOnce();
+     loop_rate.sleep();
+     ++count;
+     }
+    
+    
    ros::spin();
 
   }
