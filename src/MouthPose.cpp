@@ -13,12 +13,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include "face_detection/renderFace.hpp"
 #include "face_detection/mouth_status_estimation.hpp"
-
 #include "std_msgs/String.h"
-
 #include <sstream>
 
 using namespace dlib;
@@ -47,15 +44,14 @@ std::vector<cv::Point3d> get3dModelPoints()
 {
   std::vector<cv::Point3d> modelPoints;
 
-
-  modelPoints.push_back(cv::Point3d(0.0, 0.0, 0.0)); // Sellion
-  modelPoints.push_back(cv::Point3d(-20., -65.5,-5.)); // Right Eye
-  modelPoints.push_back(cv::Point3d(-20., 65.5,-5.)); // Left Eye
+  modelPoints.push_back(cv::Point3d(0.0, 0.0, 0.0));    // Sellion
+  modelPoints.push_back(cv::Point3d(-20., -65.5,-5.));  // Right Eye
+  modelPoints.push_back(cv::Point3d(-20., 65.5,-5.));   // Left Eye
   modelPoints.push_back(cv::Point3d(-100., -77.5,-6.)); // Right Ear
-  modelPoints.push_back(cv::Point3d(-100., 77.5,-6.)); // Left Ear
-  modelPoints.push_back(cv::Point3d(21.0, 0., -48.0)); // Nose
-  modelPoints.push_back(cv::Point3d(10.0, 0., -75.0)); // Stommion
-  modelPoints.push_back(cv::Point3d(0., 0.,-133.0)); // Menton
+  modelPoints.push_back(cv::Point3d(-100., 77.5,-6.));  // Left Ear
+  modelPoints.push_back(cv::Point3d(21.0, 0., -48.0));  // Nose
+  modelPoints.push_back(cv::Point3d(10.0, 0., -75.0));  // Stommion
+  modelPoints.push_back(cv::Point3d(0., 0.,-133.0));    // Menton
 
   return modelPoints;
 
@@ -67,15 +63,15 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
   std::vector<cv::Point2d> imagePoints;
 
-  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );    // Sellion
-  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );      // Right Eye
-  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );    // Left Eye
-  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );    // Right Ear
-  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );    // Left Ear
-  imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );    // Nose
+  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
+  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
+  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
+  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Ear
+  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );   // Left Ear
+  imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
-  d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );    // Stommion
-  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );    // Menton
+  d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
+  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
 
   return imagePoints;
 
@@ -133,16 +129,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // get 2D landmarks from Dlib's shape object
         std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
 
-        // Camera parameters
-        //double focal_length = im.cols;
-        //double focal_length = (im.cols*1.88)/3.88;
-        //cv::Mat cameraMatrix = getCameraMatrix(focal_length, cv::Point2d(im.cols/2,im.rows/2));
+        // Obtain camera parameters from the relevant rostopic
         cv::Mat_<double> cameraMatrix(3,3);
         cameraMatrix << 609.6447143554688, 0.0, 321.4963073730469, 0.0,
                         609.6193237304688, 237.5618438720703, 0.0, 0.0, 1.0;
 
-        // Assume no lens distortion
-        //cv::Mat distCoeffs = cv::Mat::zeros(4,1,cv::DataType<double>::type);
+        // Obtain lens distortion from the relevant rostopic
         cv::Mat_<double> distCoeffs(5,1);
         distCoeffs << 0.0, 0.0, 0.0, 0.0, 0.0;
 
@@ -224,7 +216,7 @@ int main(int argc, char **argv)
 
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
 
-   marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("pose", 1);
+   marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
 
