@@ -38,6 +38,9 @@ shape_predictor predictor;
 
 ros::Publisher marker_array_pub;
 
+cv::Mat_<double> distCoeffs(5,1);
+cv::Mat_<double> cameraMatrix(3,3);
+
 
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
 std::vector<cv::Point3d> get3dModelPoints()
@@ -130,20 +133,17 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
 
         // Obtain camera parameters from the relevant rostopic
-        cv::Mat_<double> cameraMatrix(3,3);
+
         cameraMatrix << 609.6447143554688, 0.0, 321.4963073730469, 0.0,
                         609.6193237304688, 237.5618438720703, 0.0, 0.0, 1.0;
 
         // Obtain lens distortion from the relevant rostopic
-        cv::Mat_<double> distCoeffs(5,1);
+
         distCoeffs << 0.0, 0.0, 0.0, 0.0, 0.0;
 
         // calculate rotation and translation vector using solvePnP
         cv::Mat rotationVector;
         cv::Mat translationVector;
-
-        translationVector = (cv::Mat_<double>(3,1) << 0., 0., 500.);
-        rotationVector = (cv::Mat_<double>(3,1) << 0.0, 0.0, 0.0);
 
         cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
         translationVector);
@@ -198,6 +198,16 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
 }
+/*
+void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
+   {
+    // Obtain camera parameters from the relevant rostopic
+    cameraMatrix = cv::Mat_<double>msg->K;
+
+    // Obtain lens distortion from the relevant rostopic
+    distCoeffs = cv::Mat_<double>msg->D;
+   }
+*/
 
 int main(int argc, char **argv)
 {
@@ -210,11 +220,13 @@ int main(int argc, char **argv)
 
    image_transport::ImageTransport it(nh);
 
-   std::string mMarkerTopic = "/camera/color/image_raw";
+   std::string MarkerTopic = "/camera/color/image_raw";
 
-   deserialize("/home/ashwin/catkin_ws/src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
+   deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
 
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+
+   //ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
 
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
