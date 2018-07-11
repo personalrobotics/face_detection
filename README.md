@@ -1,5 +1,5 @@
 # Face Detection
-Repository for detecting facial features (mouth open / closed etc.) and head pose
+Repository for detecting facial features (eyes, mouth open/closed etc.) and head pose
 
 # Software and Hardware Dependencies:
 
