@@ -12,6 +12,6 @@ Intel RealSense: https://software.intel.com/en-us/realsense/d400/get-started
 
 # Pre-trained facial landmark model required
 
-Include the path of this file in the code provided and make changes accroding to where the model is placed: 
+Include the path of this file in the code: 
 https://drive.google.com/open?id=1QU6L3vHeN24hwjQ1pVxuNKtbJj-fTvql
 
