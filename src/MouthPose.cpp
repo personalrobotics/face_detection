@@ -138,8 +138,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         translationVector = (cv::Mat_<double>(3,1) << 0., 0., -530.);
         rotationVector = (cv::Mat_<double>(3,3) << 0.0, 0.0, 0.0);
 
-        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
-        translationVector);
+        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector);
 
         cv::Mat R;
         cv::Rodrigues(rotationVector, R); // R is 3x3
