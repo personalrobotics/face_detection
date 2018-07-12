@@ -67,15 +67,15 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
   std::vector<cv::Point2d> imagePoints;
 
-  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
-  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
-  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
-  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Ear
-  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );   // Left Ear
-  imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
+  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );                             // Sellion
+  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );                             // Right Eye
+  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );                             // Left Eye
+  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );                               // Right Ear
+  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );                             // Left Ear
+  imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );                             // Nose
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
-  d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
-  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+  				       d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );  // Stommion
+  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );                               // Menton
 
   return imagePoints;
 
@@ -95,8 +95,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       cv_image<bgr_pixel> cimg(im);
 
       // Process frames at an interval of SKIP_FRAMES.
-      // This value should be set depending on your system hardware
-      // and camera fps.
       // To reduce computations, this value should be increased
       if ( counter % SKIP_FRAMES == 0 )
       {
@@ -143,7 +141,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
         translationVector);
 
-
         cv::Mat R;
         cv::Rodrigues(rotationVector, R); // R is 3x3
 
@@ -153,7 +150,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // fill up a Marker
         visualization_msgs::Marker new_marker;
         // Grab the position
-	    new_marker.pose.position.x =translationVector.at<double>(0) ;
+	new_marker.pose.position.x =translationVector.at<double>(0) ;
         new_marker.pose.position.y =translationVector.at<double>(1) ;
         new_marker.pose.position.z =translationVector.at<double>(2);
         // Grab the orientation
@@ -169,13 +166,13 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         mouthOpen = checkMouth(shape);
         if (mouthOpen == true){
             cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
-                cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
+            cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is open
             new_marker.text="O";
-
-            } else {
+            } 
+	else {
             cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
-               cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
+            cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is closed
             new_marker.text="C";
             }
@@ -212,15 +209,10 @@ void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
             }
         }
 
-        //cout << cameraMatrix;
-
     // Obtain lens distortion from the relevant rostopic
     for(i=0;i<5;i++) {
         distCoeffs.at<double>(i)=msg->D[i];
-            }
-
-        //cout << distCoeffs;
-
+        }
    }
 
 
@@ -228,7 +220,6 @@ int main(int argc, char **argv)
 {
   try
   {
-
    ros::init(argc, argv, "image_listener");
    ros::NodeHandle nh;
    image_transport::ImageTransport it(nh);
