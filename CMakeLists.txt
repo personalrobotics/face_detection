@@ -11,7 +11,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 find_package( OpenCV REQUIRED )
 
+message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
+
 find_package( dlib REQUIRED )
+
+message(STATUS "OpenCV_INCLUDE_DIRS = ${dlib_INCLUDE_DIRS}")
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -126,7 +131,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include(~/Desktop/everything/cv4faces/dlib-19.4/dlib/cmake)
+#include(~/Desktop/everything/cv4faces/dlib-19.4/dlib/cmake)
 include_directories(include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
