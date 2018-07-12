@@ -146,7 +146,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // fill up a Marker
         visualization_msgs::Marker new_marker;
         // Grab the position
-	    new_marker.pose.position.x =translationVector.at<double>(0) ;
+	new_marker.pose.position.x =translationVector.at<double>(0) ;
         new_marker.pose.position.y =translationVector.at<double>(1) ;
         new_marker.pose.position.z =translationVector.at<double>(2);
         // Grab the orientation
@@ -171,7 +171,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
                cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is closed
             new_marker.text="C";
-
             }
 
             marker_arr.markers.push_back(new_marker);
@@ -196,24 +195,20 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
    {
-
     int i,j;
-
     // Obtain camera parameters from the relevant rostopic
-
     for(i=0;i<=2;i++) {
         for(j=0;j<=2;j++) {
             cameraMatrix.at<double>(i,j)=msg->K[i+j];
+            }
         }
-    }
-
 
     // Obtain lens distortion from the relevant rostopic
     for(i=0;i<1;i++) {
         for(j=0;j<=4;j++) {
-    distCoeffs.at<double>(i,j)=msg->D[i+j];
+            distCoeffs.at<double>(i,j)=msg->D[i+j];
+            }
         }
-    }
 
    }
 
