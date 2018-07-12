@@ -138,13 +138,17 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat translationVector;
 
         translationVector = (cv::Mat_<double>(3,1) << 0., 0., -530.);
-        rotationVector = (cv::Mat_<double>(3,1) << 0.0, 0.0, 0.0);
-
-        //cout << cameraMatrix;
-        cout << distCoeffs;
+        rotationVector = (cv::Mat_<double>(3,3) << 0.0, 0.0, 0.0);
 
         cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
         translationVector);
+
+
+        cv::Mat R;
+        cv::Rodrigues(rotationVector, R); // R is 3x3
+
+        R = R.t();  // rotation of inverse
+        translationVector = -R * translationVector; // translation of inverse
 
         // fill up a Marker
         visualization_msgs::Marker new_marker;
