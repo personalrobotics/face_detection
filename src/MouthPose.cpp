@@ -20,6 +20,7 @@
 
 using namespace dlib;
 using namespace std;
+using namespace sensor_msgs;
 
 #define FACE_DOWNSAMPLE_RATIO 2
 #define SKIP_FRAMES 5
@@ -132,18 +133,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // get 2D landmarks from Dlib's shape object
         std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
 
-        // Obtain camera parameters from the relevant rostopic
-
-        cameraMatrix << 609.6447143554688, 0.0, 321.4963073730469, 0.0,
-                        609.6193237304688, 237.5618438720703, 0.0, 0.0, 1.0;
-
-        // Obtain lens distortion from the relevant rostopic
-
-        distCoeffs << 0.0, 0.0, 0.0, 0.0, 0.0;
-
         // calculate rotation and translation vector using solvePnP
         cv::Mat rotationVector;
         cv::Mat translationVector;
+
+        translationVector = (cv::Mat_<double>(3,1) << 0., 0., 500.);
+        rotationVector = (cv::Mat_<double>(3,1) << 0.0, 0.0, 0.0);
 
         cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
         translationVector);
@@ -198,16 +193,30 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
 }
-/*
+
 void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
    {
+
+    int i,j;
+
     // Obtain camera parameters from the relevant rostopic
-    cameraMatrix = cv::Mat_<double>msg->K;
+
+    for(i=0;i<=2;i++) {
+        for(j=0;j<=2;j++) {
+            cameraMatrix.at<double>(i,j)=msg->K[i+j];
+        }
+    }
+
 
     // Obtain lens distortion from the relevant rostopic
-    distCoeffs = cv::Mat_<double>msg->D;
+    for(i=0;i<1;i++) {
+        for(j=0;j<=4;j++) {
+    distCoeffs.at<double>(i,j)=msg->D[i+j];
+        }
+    }
+
    }
-*/
+
 
 int main(int argc, char **argv)
 {
@@ -215,23 +224,16 @@ int main(int argc, char **argv)
   {
 
    ros::init(argc, argv, "image_listener");
-
    ros::NodeHandle nh;
-
    image_transport::ImageTransport it(nh);
 
    std::string MarkerTopic = "/camera/color/image_raw";
-
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
-
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
-
-   //ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
-
+   ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
-
   }
   catch(serialization_error& e)
   {
