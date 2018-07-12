@@ -137,8 +137,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat rotationVector;
         cv::Mat translationVector;
 
-        translationVector = (cv::Mat_<double>(3,1) << 0., 0., 500.);
+        translationVector = (cv::Mat_<double>(3,1) << 0., 0., -530.);
         rotationVector = (cv::Mat_<double>(3,1) << 0.0, 0.0, 0.0);
+
+        //cout << cameraMatrix;
+        cout << distCoeffs;
 
         cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
         translationVector);
@@ -146,7 +149,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // fill up a Marker
         visualization_msgs::Marker new_marker;
         // Grab the position
-	new_marker.pose.position.x =translationVector.at<double>(0) ;
+	    new_marker.pose.position.x =translationVector.at<double>(0) ;
         new_marker.pose.position.y =translationVector.at<double>(1) ;
         new_marker.pose.position.z =translationVector.at<double>(2);
         // Grab the orientation
@@ -196,19 +199,23 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
    {
     int i,j;
+    int count=0;
     // Obtain camera parameters from the relevant rostopic
     for(i=0;i<=2;i++) {
         for(j=0;j<=2;j++) {
-            cameraMatrix.at<double>(i,j)=msg->K[i+j];
+            cameraMatrix.at<double>(i,j)=msg->K[count];
+            count++;
             }
         }
 
+        //cout << cameraMatrix;
+
     // Obtain lens distortion from the relevant rostopic
-    for(i=0;i<1;i++) {
-        for(j=0;j<=4;j++) {
-            distCoeffs.at<double>(i,j)=msg->D[i+j];
+    for(i=0;i<5;i++) {
+        distCoeffs.at<double>(i)=msg->D[i];
             }
-        }
+
+        //cout << distCoeffs;
 
    }
 
