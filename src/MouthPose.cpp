@@ -43,7 +43,7 @@ cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
 
 
-// 3D Model Points of selected landmarks in an arbitrary frame of reference
+// 3D Model Points of selected landmarks in an arbitrary frame of reference (in mm units)
 std::vector<cv::Point3d> get3dModelPoints()
 {
   std::vector<cv::Point3d> modelPoints;
