@@ -43,11 +43,14 @@ cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
 
 
-// 3D Model Points of selected landmarks in an arbitrary frame of reference (in mm units)
+// 3D Model Points of selected landmarks in an arbitrary frame of reference
 std::vector<cv::Point3d> get3dModelPoints()
 {
   std::vector<cv::Point3d> modelPoints;
 
+  // sellion origin
+  // X direction points forward projecting out of the person's stomion
+  /*
   modelPoints.push_back(cv::Point3d(0.0, 0.0, 0.0));    // Sellion
   modelPoints.push_back(cv::Point3d(-20., -65.5,-5.));  // Right Eye
   modelPoints.push_back(cv::Point3d(-20., 65.5,-5.));   // Left Eye
@@ -56,6 +59,19 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(21.0, 0., -48.0));  // Nose
   modelPoints.push_back(cv::Point3d(10.0, 0., -75.0));  // Stommion
   modelPoints.push_back(cv::Point3d(0., 0.,-133.0));    // Menton
+  */
+  // Stomion Origin
+  // X direction points forward projecting out of the person's stomion
+
+  modelPoints.push_back(cv::Point3d(0., 0., 0.));  // Stommion
+  modelPoints.push_back(cv::Point3d(-30., -65.5,70.0));  // Right Eye
+  modelPoints.push_back(cv::Point3d(-30., 65.5,70.));   // Left Eye
+  //modelPoints.push_back(cv::Point3d(-110., -77.5,69.)); // Right Ear
+  //modelPoints.push_back(cv::Point3d(-110., 77.5,69.));  // Left Ear
+  //modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
+  modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
+ // modelPoints.push_back(cv::Point3d(-10., 0.,-58.0));    // Menton
+
 
   return modelPoints;
 
@@ -67,15 +83,29 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
   std::vector<cv::Point2d> imagePoints;
 
-  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );                             // Sellion
-  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );                             // Right Eye
-  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );                             // Left Eye
-  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );                               // Right Ear
-  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );                             // Left Ear
-  imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );                             // Nose
+  // Sellion Origin
+  /*
+  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
+  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
+  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
+  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Ear
+  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );   // Left Ear
+  imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
-  				       d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );  // Stommion
-  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );                               // Menton
+  d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
+  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+  */
+  // Stomion Origin
+  imagePoints.push_back( cv::Point2d( (d.part(62).x()+
+  d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
+  imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
+  imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
+  //imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Ear
+  //imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );   // Left Ear
+  //imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
+  imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
+  //imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+
 
   return imagePoints;
 
@@ -95,6 +125,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       cv_image<bgr_pixel> cimg(im);
 
       // Process frames at an interval of SKIP_FRAMES.
+      // This value should be set depending on your system hardware
+      // and camera fps.
       // To reduce computations, this value should be increased
       if ( counter % SKIP_FRAMES == 0 )
       {
@@ -135,27 +167,23 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat rotationVector;
         cv::Mat translationVector;
 
-        translationVector = (cv::Mat_<double>(3,1) << 0., 0., -530.);
+        translationVector = (cv::Mat_<double>(3,1) << 0., 0., 430.);
         rotationVector = (cv::Mat_<double>(3,3) << 0.0, 0.0, 0.0);
 
-        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector);
-
-        cv::Mat R;
-        cv::Rodrigues(rotationVector, R); // R is 3x3
-
-        R = R.t();  // rotation of inverse
-        translationVector = -R * translationVector; // translation of inverse
+        cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
+        translationVector);
 
         // fill up a Marker
         visualization_msgs::Marker new_marker;
+
         // Grab the position
-	new_marker.pose.position.x =translationVector.at<double>(0) ;
+	    new_marker.pose.position.x =translationVector.at<double>(0) ;
         new_marker.pose.position.y =translationVector.at<double>(1) ;
         new_marker.pose.position.z =translationVector.at<double>(2);
-        // Grab the orientation
 
+       // cv::Rodrigues(R, rotationVector); // rotationVector is 1x3
         double theta = cv::norm(rotationVector, CV_L2);
-
+        // Grab the orientation
         new_marker.pose.orientation.x = sin(theta / 2)*rotationVector.at<double>(0, 2) / theta;
         new_marker.pose.orientation.y = sin(theta / 2)*rotationVector.at<double>(0, 1) / theta;
         new_marker.pose.orientation.z = sin(theta / 2)*rotationVector.at<double>(0, 0) / theta;
@@ -165,22 +193,24 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         mouthOpen = checkMouth(shape);
         if (mouthOpen == true){
             cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
-            cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
+                cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is open
             new_marker.text="{\"id\": \"food_item\", \"mouth-status\": \"open\"}";
             new_marker.ns="food_item";
-            }
-	else {
+            } else {
             cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
-            cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
+               cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is closed
             new_marker.text="{\"id\": \"food_item\", \"mouth-status\": \"closed\"}";
             new_marker.ns="food_item";
             }
 
+            new_marker.header.frame_id="/camera_link";
+
             marker_arr.markers.push_back(new_marker);
 
       }
+
 
       // publish the marker array
       marker_array_pub.publish(marker_arr);
@@ -213,7 +243,9 @@ void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
     // Obtain lens distortion from the relevant rostopic
     for(i=0;i<5;i++) {
         distCoeffs.at<double>(i)=msg->D[i];
-        }
+            }
+
+
    }
 
 
@@ -221,6 +253,7 @@ int main(int argc, char **argv)
 {
   try
   {
+
    ros::init(argc, argv, "image_listener");
    ros::NodeHandle nh;
    image_transport::ImageTransport it(nh);
