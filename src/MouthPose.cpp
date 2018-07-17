@@ -167,13 +167,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
             cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
             cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is open
-            new_marker.text="O";
-            } 
+            new_marker.text="{\"id\": \"food_item\", \"mouth-status\": \"open\"}";
+            new_marker.ns="food_item";
+            }
 	else {
             cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
             cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is closed
-            new_marker.text="C";
+            new_marker.text="{\"id\": \"food_item\", \"mouth-status\": \"closed\"}";
+            new_marker.ns="food_item";
             }
 
             marker_arr.markers.push_back(new_marker);
