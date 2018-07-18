@@ -250,11 +250,12 @@ void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
 
 float distance(float x,float y)
 {
+float d;
 return d=sqrt((x[0]-y[0])^2+(x[1]-y[1])^2+(x[2]-y[2])^2);
 }
 
 
-void DepthCallBack()
+void DepthCallBack(const sensor_msgs::ImageConstPtr& msg)
   {
    const int size_of_depth_pixel = 2; // pixel size in bytes
    const int size_of_color_pixel = 3; // pixel size in bytes
@@ -290,7 +291,7 @@ int main(int argc, char **argv)
 
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
 
-   ros::Subscriber sub_depth = nh.subscribe("/camera/aligned-depth-to-color", 1, DepthCallBack );
+   ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color", 1, DepthCallBack );
 
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
