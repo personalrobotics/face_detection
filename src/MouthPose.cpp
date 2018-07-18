@@ -167,11 +167,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat rotationVector;
         cv::Mat translationVector;
 
-        translationVector = (cv::Mat_<double>(3,1) << 0., 0., 430.);
-        rotationVector = (cv::Mat_<double>(3,3) << 0.0, 0.0, 0.0);
+        cv::Mat R;
 
         cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,
         translationVector);
+
+        cv::Rodrigues(rotationVector,R);
+        R = R.t();
+
+        cv::Rodrigues(R,rotationVector);
 
         // fill up a Marker
         visualization_msgs::Marker new_marker;
@@ -184,9 +188,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
        // cv::Rodrigues(R, rotationVector); // rotationVector is 1x3
         double theta = cv::norm(rotationVector, CV_L2);
         // Grab the orientation
-        new_marker.pose.orientation.x = sin(theta / 2)*rotationVector.at<double>(0, 2) / theta;
-        new_marker.pose.orientation.y = sin(theta / 2)*rotationVector.at<double>(0, 1) / theta;
-        new_marker.pose.orientation.z = sin(theta / 2)*rotationVector.at<double>(0, 0) / theta;
+        new_marker.pose.orientation.x = sin(theta / 2)*rotationVector.at<double>(2) / theta;
+        new_marker.pose.orientation.y = sin(theta / 2)*rotationVector.at<double>(1) / theta;
+        new_marker.pose.orientation.z = sin(theta / 2)*rotationVector.at<double>(0) / theta;
         new_marker.pose.orientation.w = cos(theta / 2);
 
         // mouth status display
