@@ -116,6 +116,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   try
   {
       im = cv_bridge::toCvShare(msg, "bgr8")->image;
+      cv::rotate(im, im, cv::ROTATE_90_COUNTERCLOCKWISE);
 
       // Create imSmall by resizing image for face detection
       cv::resize(im, imSmall, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
@@ -177,9 +178,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         visualization_msgs::Marker new_marker;
 
         // Grab the position
-	    new_marker.pose.position.x =translationVector.at<double>(0) ;
-        new_marker.pose.position.y =translationVector.at<double>(1) ;
-        new_marker.pose.position.z =translationVector.at<double>(2);
+	    new_marker.pose.position.x =translationVector.at<double>(0) / 1000;
+        new_marker.pose.position.y =translationVector.at<double>(1) / 1000;
+        new_marker.pose.position.z =translationVector.at<double>(2) / 1000;
 
        // cv::Rodrigues(R, rotationVector); // rotationVector is 1x3
         double theta = cv::norm(rotationVector, CV_L2);
@@ -195,17 +196,17 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
             cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
                 cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is open
-            new_marker.text="{\"id\": \"food_item\", \"mouth-status\": \"open\"}";
-            new_marker.ns="food_item";
+            new_marker.text="{\"id\": \"mouth\", \"mouth-status\": \"open\"}";
+            new_marker.ns="mouth";
             } else {
             cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
                cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
             // Grab the mouth status when the mouth is closed
-            new_marker.text="{\"id\": \"food_item\", \"mouth-status\": \"closed\"}";
-            new_marker.ns="food_item";
+            new_marker.text="{\"id\": \"mouth\", \"mouth-status\": \"closed\"}";
+            new_marker.ns="mouth";
             }
 
-            new_marker.header.frame_id="/camera_link";
+            new_marker.header.frame_id="/camera_color_optical_frame";
 
             marker_arr.markers.push_back(new_marker);
 
