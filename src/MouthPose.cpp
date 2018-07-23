@@ -64,13 +64,20 @@ std::vector<cv::Point3d> get3dModelPoints()
   // X direction points forward projecting out of the person's stomion
 
   modelPoints.push_back(cv::Point3d(0., 0., 0.));  // Stommion
-  modelPoints.push_back(cv::Point3d(-30., -65.5,70.0));  // Right Eye
-  modelPoints.push_back(cv::Point3d(-30., 65.5,70.));   // Left Eye
+  modelPoints.push_back(cv::Point3d(-30.0, -65.5,70.0));  // Right Eye
+  modelPoints.push_back(cv::Point3d(-30.0, 65.5,70.));   // Left Eye
   // modelPoints.push_back(cv::Point3d(-110., -77.5,69.)); // Right Ear
   // modelPoints.push_back(cv::Point3d(-110., 77.5,69.));  // Left Ear
   modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
   modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
- modelPoints.push_back(cv::Point3d(-10., 0.,-58.0));    // Menton
+  modelPoints.push_back(cv::Point3d(-10.0, 0.,-58.0));    // Menton
+  modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
+  modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
+  modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
+  modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
+
+
+
 
 
   return modelPoints;
@@ -105,6 +112,11 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
   imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+  imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
+  imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
+  imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
+  imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
+
 
 
   return imagePoints;
@@ -114,8 +126,8 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 void getQuaternion(cv::Mat R, double Q[])
 {
     double trace = R.at<double>(0,0) + R.at<double>(1,1) + R.at<double>(2,2);
- 
-    if (trace > 0.0) 
+
+    if (trace > 0.0)
     {
         double s = sqrt(trace + 1.0);
         Q[3] = (s * 0.5);
@@ -123,12 +135,13 @@ void getQuaternion(cv::Mat R, double Q[])
         Q[0] = ((R.at<double>(2,1) - R.at<double>(1,2)) * s);
         Q[1] = ((R.at<double>(0,2) - R.at<double>(2,0)) * s);
         Q[2] = ((R.at<double>(1,0) - R.at<double>(0,1)) * s);
-    } 
-    
-    else 
+    }
+
+    else
     {
-        int i = R.at<double>(0,0) < R.at<double>(1,1) ? (R.at<double>(1,1) < R.at<double>(2,2) ? 2 : 1) : (R.at<double>(0,0) < R.at<double>(2,2) ? 2 : 0); 
-        int j = (i + 1) % 3;  
+        int i = R.at<double>(0,0) < R.at<double>(1,1) ? (R.at<double>(1,1)
+         < R.at<double>(2,2) ? 2 : 1) : (R.at<double>(0,0) < R.at<double>(2,2) ? 2 : 0);
+        int j = (i + 1) % 3;
         int k = (i + 2) % 3;
 
         double s = sqrt(R.at<double>(i, i) - R.at<double>(j,j) - R.at<double>(k,k) + 1.0);
@@ -225,7 +238,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
          double confidence=0.99;
 
         cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector,
-         use_extrinsic_guess,num_iters, reprojection_error,confidence,inliers); 
+         use_extrinsic_guess,num_iters, reprojection_error,confidence,inliers);
 
         //cout << rotationVector << "\n";
 
@@ -245,66 +258,20 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // Grab the position
         translationVector=R_z*translationVector;
 
-	      new_marker.pose.position.x =(translationVector.at<double>(0)) / 1000;
+        new_marker.pose.position.x =(translationVector.at<double>(0)) / 1000;
         new_marker.pose.position.y =(translationVector.at<double>(1)) / 1000;
         new_marker.pose.position.z =(translationVector.at<double>(2)) / 1000;
 
-      /*
-       double tr=R.at<double>(0,0)+R.at<double>(1,1)+R.at<double>(2,2);
-       double qw,qx,qy,qz;
 
-        if (tr > 0) { 
-        float S = sqrt(tr+1.0) * 2; // S=4*qw 
-        qw = 0.25 * S;
-        qx = (R.at<double>(2,1) - R.at<double>(1,2)) / S;
-        qy = (R.at<double>(0,2) - R.at<double>(2,0)) / S; 
-        qz = (R.at<double>(1,0) - R.at<double>(0,1)) / S; 
-         } 
-         else if ((R.at<double>(0,0) > R.at<double>(1,1))& (R.at<double>(0,0) > R.at<double>(2,2))) { 
-         float S = sqrt(1.0 + R.at<double>(0,0) - R.at<double>(1,1) - R.at<double>(2,2)) * 2; // S=4*qx 
-         qw = (R.at<double>(2,1) - R.at<double>(1,2)) / S;
-         qx = 0.25 * S;
-         qy = (R.at<double>(0,1) + R.at<double>(1,0)) / S; 
-         qz = (R.at<double>(0,2) + R.at<double>(2,0)) / S; 
-        } else if (R.at<double>(1,1) > R.at<double>(2,2)) { 
-        float S = sqrt(1.0 + R.at<double>(1,1) - R.at<double>(0,0) - R.at<double>(2,2)) * 2; // S=4*qy
-        qw = (R.at<double>(0,2) - R.at<double>(2,0)) / S;
-        qx = (R.at<double>(0,1) + R.at<double>(1,0)) / S; 
-        qy = 0.25 * S;
-        qz = (R.at<double>(1,2) + R.at<double>(2,1)) / S; 
-       } else { 
-       float S = sqrt(1.0 + R.at<double>(2,2) - R.at<double>(0,0) - R.at<double>(1,1)) * 2; // S=4*qz
-       qw = (R.at<double>(1,0) - R.at<double>(0,1)) / S;
-       qx = (R.at<double>(0,2) + R.at<double>(2,0)) / S;
-       qy = (R.at<double>(1,2) + R.at<double>(2,1)) / S;
-       qz = 0.25 * S;
-       }
-
-       new_marker.pose.orientation.x = qx;
-       new_marker.pose.orientation.y = qy;
-       new_marker.pose.orientation.z = qz;
-       new_marker.pose.orientation.w = qw;
-        
-        */
-
-/*
-        double theta = cv::norm(rotationVector, CV_L2);
-      
-        // Grab the orientation
-        new_marker.pose.orientation.x = sin(theta / 2)*rotationVector.at<double>(2) / theta;
-        new_marker.pose.orientation.y = sin(theta / 2)*rotationVector.at<double>(1) / theta;
-        new_marker.pose.orientation.z = sin(theta / 2)*rotationVector.at<double>(0) / theta;
-        new_marker.pose.orientation.w = cos(theta / 2);   */
-
-        double Q[4];
-        getQuaternion(R,Q);
+       double Q[4];
+       getQuaternion(R,Q);
 
        new_marker.pose.orientation.x = Q[2];
        new_marker.pose.orientation.y = Q[1];
        new_marker.pose.orientation.z = Q[0];
        new_marker.pose.orientation.w = Q[3];
 
-        
+
 
         // mouth status display
         mouthOpen = checkMouth(shape);
