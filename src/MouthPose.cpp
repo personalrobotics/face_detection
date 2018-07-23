@@ -41,7 +41,7 @@ ros::Publisher marker_array_pub;
 
 cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
-
+//test
 
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
 std::vector<cv::Point3d> get3dModelPoints()
@@ -332,6 +332,33 @@ void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
 
    }
 
+float distance(float x,float y)
+{
+float d;
+return d=sqrt((x[0]-y[0])^2+(x[1]-y[1])^2+(x[2]-y[2])^2);
+}
+
+
+void DepthCallBack(const sensor_msgs::ImageConstPtr& msg)
+  {
+   const int size_of_depth_pixel = 2; // pixel size in bytes
+   const int size_of_color_pixel = 3; // pixel size in bytes
+   uint8_t* aligned_depth_to_color;
+   uint8_t* color;
+   for (int y = 0; y < depth_frame_height; ++y){
+	   for (int x = 0; x < depth_frame_width; ++x){
+		int depth_pixel_position = (y * depth_frame_width + x) * size_of_depth_pixel;
+		if (aligned_depth_to_color[depth_pixel_position] != 0)
+		{
+			int color_pixel_position = (y * depth_frame_width + x) * size_of_color_pixel;
+			corresponding_color_pixel = color[color_pixel_position];
+		}
+	  }
+	}
+}
+
+
+
 
 int main(int argc, char **argv)
 {
@@ -345,7 +372,11 @@ int main(int argc, char **argv)
    std::string MarkerTopic = "/camera/color/image_raw";
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
+
+   ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color", 1, DepthCallBack );
+
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
