@@ -25,8 +25,6 @@ using namespace dlib;
 using namespace std;
 using namespace sensor_msgs;
 
-
-
 #define FACE_DOWNSAMPLE_RATIO 2
 #define SKIP_FRAMES 5
 #define OPENCV_FACE_RENDER
@@ -85,10 +83,6 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
   modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
 
-
-
-
-
   return modelPoints;
 
 }
@@ -112,7 +106,6 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton  */
 
 
-
   // Stomion Origin
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
   d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
@@ -125,8 +118,6 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
   imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
   imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
-
-
 
   return imagePoints;
 
@@ -259,16 +250,16 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
             marker_arr.markers.push_back(new_marker);
 
-      // Project a 3D point (0, 0, 1000.0) onto the image plane.
-      // We use this to draw a line sticking out of the nose
+      // Project a 3D point (0, 0, 100.0) onto the image plane.
+      // We use this to draw a line sticking out of the stomion
       std::vector<cv::Point3d> StomionPoint3D;
       std::vector<cv::Point2d> StomionPoint2D;
       StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
       cv::projectPoints(StomionPoint3D, rvec, tvec, cameraMatrix, distCoeffs, StomionPoint2D);
 
-      // draw line between nose points in image and 3D nose points
+      // draw line between stomion points in image and 3D stomion points
       // projected to image plane
-      cv::line(im,imagePoints[0], StomionPoint2D[0], cv::Scalar(255,0,0), 2);
+      cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0), 2);
       }
 
       // publish the marker array
