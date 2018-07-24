@@ -32,7 +32,7 @@ bool checkMouth(dlib::full_object_detection &shape){
     float lipThickness = (float) sqrt(pow((mouthPoints[1].x - mouthPoints[7].x),2)+pow((mouthPoints[1].y - mouthPoints[7].y),2))/2+
     sqrt(pow((mouthPoints[4].x - mouthPoints[10].x),2)+pow((mouthPoints[4].y - mouthPoints[10].y),2))/2;
     
-    if (lipDist >= 1.5*lipThickness){
+    if (lipDist >= 1.0*lipThickness){
         mouthOpen = true;
     } else {
         mouthOpen = false;

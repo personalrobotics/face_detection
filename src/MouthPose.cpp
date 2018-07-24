@@ -17,16 +17,27 @@
 #include "face_detection/mouth_status_estimation.hpp"
 #include "std_msgs/String.h"
 #include <sstream>
+#include <Eigen/Geometry>
+#include <Eigen/Dense>
+#include <opencv2/core/eigen.hpp>
 
 using namespace dlib;
 using namespace std;
 using namespace sensor_msgs;
+
+
 
 #define FACE_DOWNSAMPLE_RATIO 2
 #define SKIP_FRAMES 5
 #define OPENCV_FACE_RENDER
 
 // global declarations
+
+cv::Mat rvec;
+cv::Mat tvec;
+
+cv::Mat rotationVector;
+cv::Mat translationVector;
 
 bool mouthOpen; // store status of mouth being open or closed
 cv::Mat im; // matrix to store the image
@@ -50,7 +61,7 @@ std::vector<cv::Point3d> get3dModelPoints()
 
   // sellion origin
   // X direction points forward projecting out of the person's stomion
-  /*
+/*
   modelPoints.push_back(cv::Point3d(0.0, 0.0, 0.0));    // Sellion
   modelPoints.push_back(cv::Point3d(-20., -65.5,-5.));  // Right Eye
   modelPoints.push_back(cv::Point3d(-20., 65.5,-5.));   // Left Eye
@@ -58,16 +69,14 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(-100., 77.5,-6.));  // Left Ear
   modelPoints.push_back(cv::Point3d(21.0, 0., -48.0));  // Nose
   modelPoints.push_back(cv::Point3d(10.0, 0., -75.0));  // Stommion
-  modelPoints.push_back(cv::Point3d(0., 0.,-133.0));    // Menton
-  */
+  modelPoints.push_back(cv::Point3d(0., 0.,-133.0));    // Menton */
+
   // Stomion Origin
   // X direction points forward projecting out of the person's stomion
 
   modelPoints.push_back(cv::Point3d(0., 0., 0.));  // Stommion
   modelPoints.push_back(cv::Point3d(-30.0, -65.5,70.0));  // Right Eye
   modelPoints.push_back(cv::Point3d(-30.0, 65.5,70.));   // Left Eye
-  // modelPoints.push_back(cv::Point3d(-110., -77.5,69.)); // Right Ear
-  // modelPoints.push_back(cv::Point3d(-110., 77.5,69.));  // Left Ear
   modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
   modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
   modelPoints.push_back(cv::Point3d(-10.0, 0.,-58.0));    // Menton
@@ -89,9 +98,9 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 {
 
   std::vector<cv::Point2d> imagePoints;
-
+/*
   // Sellion Origin
-  /*
+
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
   imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
   imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
@@ -100,15 +109,15 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
   d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
-  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
-  */
+  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton  */
+
+
+
   // Stomion Origin
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
   d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
   imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
   imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
-  // imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Ear
-  // imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );   // Left Ear
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
   imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
@@ -123,36 +132,6 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
 }
 
-void getQuaternion(cv::Mat R, double Q[])
-{
-    double trace = R.at<double>(0,0) + R.at<double>(1,1) + R.at<double>(2,2);
-
-    if (trace > 0.0)
-    {
-        double s = sqrt(trace + 1.0);
-        Q[3] = (s * 0.5);
-        s = 0.5 / s;
-        Q[0] = ((R.at<double>(2,1) - R.at<double>(1,2)) * s);
-        Q[1] = ((R.at<double>(0,2) - R.at<double>(2,0)) * s);
-        Q[2] = ((R.at<double>(1,0) - R.at<double>(0,1)) * s);
-    }
-
-    else
-    {
-        int i = R.at<double>(0,0) < R.at<double>(1,1) ? (R.at<double>(1,1)
-         < R.at<double>(2,2) ? 2 : 1) : (R.at<double>(0,0) < R.at<double>(2,2) ? 2 : 0);
-        int j = (i + 1) % 3;
-        int k = (i + 2) % 3;
-
-        double s = sqrt(R.at<double>(i, i) - R.at<double>(j,j) - R.at<double>(k,k) + 1.0);
-        Q[i] = s * 0.5;
-        s = 0.5 / s;
-
-        Q[3] = (R.at<double>(k,j) - R.at<double>(j,k)) * s;
-        Q[j] = (R.at<double>(j,i) + R.at<double>(i,j)) * s;
-        Q[k] = (R.at<double>(k,i) + R.at<double>(i,k)) * s;
-    }
-}
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
@@ -160,7 +139,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
       im = cv_bridge::toCvShare(msg, "bgr8")->image;
 
-      cv::rotate(im, im, cv::ROTATE_90_COUNTERCLOCKWISE);
+      //cv::rotate(im, im, cv::ROTATE_90_COUNTERCLOCKWISE);
 
       // Create imSmall by resizing image for face detection
       cv::resize(im, imSmall, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
@@ -189,37 +168,38 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       std::vector<full_object_detection> shapes;
       for (unsigned long i = 0; i < faces.size(); ++i)
       {
-        // Since we ran face detection on a resized image,
-        // we will scale up coordinates of face rectangle
-        rectangle r(
+       // Since we ran face detection on a resized image,
+       // we will scale up coordinates of face rectangle
+       rectangle r(
               (long)(faces[i].left() * FACE_DOWNSAMPLE_RATIO),
               (long)(faces[i].top() * FACE_DOWNSAMPLE_RATIO),
               (long)(faces[i].right() * FACE_DOWNSAMPLE_RATIO),
               (long)(faces[i].bottom() * FACE_DOWNSAMPLE_RATIO)
               );
 
-        // Find face landmarks by providing reactangle for each face
-        full_object_detection shape = predictor(cimg, r);
-        shapes.push_back(shape);
+       // Find face landmarks by providing reactangle for each face
+       full_object_detection shape = predictor(cimg, r);
+       shapes.push_back(shape);
 
-        // Draw landmarks over face
-        renderFace(im, shape);
+       // Draw landmarks over face
+       renderFace(im, shape);
 
-        // get 2D landmarks from Dlib's shape object
-        std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
+       // get 2D landmarks from Dlib's shape object
+       std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
 
-        // calculate rotation and translation vector using solvePnP
-        cv::Mat rotationVector;
-        cv::Mat translationVector;
+       // calculate rotation and translation vector using solvePnP
 
-        cv::Mat R;
+       rvec=cv::Mat::zeros(3, 1, CV_32F);
+       tvec=cv::Mat::zeros(3, 1, CV_32F);
 
-        cv::Mat R_z = (cv::Mat_<double>(3,3) <<
+       cv::Mat R;
+
+       cv::Mat R_z = (cv::Mat_<double>(3,3) <<
                0.0,    -1.0,      0.0,
                1.0, 0.0, 0.0,
                0.0,0.0,1.0);
 
-        cv::Mat R_y = (cv::Mat_<double>(3,3) <<
+       cv::Mat R_y = (cv::Mat_<double>(3,3) <<
                0.0,    0.0,      1.0,
                0.0, 1.0, 0.0,
                -1.0,0.0,0.0);
@@ -229,49 +209,37 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
                0.0, 0.0, -1.0,
                0.0,1.0,0.0);
 
-        std::vector<int> inliers;
-        //std::vector<int>* inliers =NULL;
+       cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
 
-         float reprojection_error=8.0;
-         int num_iters=100;
-         bool use_extrinsic_guess=false;
-         double confidence=0.99;
+       cv::Vec3d tvecV;
+       cv::Vec3d rvecV;
+       Eigen::Vector3d Translate;
+       Eigen::Quaterniond quats;
 
-        cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector,
-         use_extrinsic_guess,num_iters, reprojection_error,confidence,inliers);
+       //R = R_x*R_z*R;
 
-        //cout << rotationVector << "\n";
+       cv::Rodrigues(rotationVector,R);
 
-        //cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
+       Eigen::Matrix3d mat;
+       cv::cv2eigen(R, mat);
 
-        cout << inliers.size() << endl;
+       Eigen::Quaterniond EigenQuat(mat);
 
-        cv::Rodrigues(rotationVector,R);
+       quats = EigenQuat;
 
-        R = R_x*R_z*R;
+       // fill up a Marker
+       visualization_msgs::Marker new_marker;
 
-        cv::Rodrigues(R,rotationVector);
+       // Grab the position
 
-        // fill up a Marker
-        visualization_msgs::Marker new_marker;
+       new_marker.pose.position.x =(translationVector.at<double>(0)) / 1000;
+       new_marker.pose.position.y =(translationVector.at<double>(1)) / 1000;
+       new_marker.pose.position.z =(translationVector.at<double>(2)) / 1000;
 
-        // Grab the position
-        translationVector=R_z*translationVector;
-
-        new_marker.pose.position.x =(translationVector.at<double>(0)) / 1000;
-        new_marker.pose.position.y =(translationVector.at<double>(1)) / 1000;
-        new_marker.pose.position.z =(translationVector.at<double>(2)) / 1000;
-
-
-       double Q[4];
-       getQuaternion(R,Q);
-
-       new_marker.pose.orientation.x = Q[2];
-       new_marker.pose.orientation.y = Q[1];
-       new_marker.pose.orientation.z = Q[0];
-       new_marker.pose.orientation.w = Q[3];
-
-
+       new_marker.pose.orientation.x = quats.vec()[0];
+       new_marker.pose.orientation.y = quats.vec()[1];
+       new_marker.pose.orientation.z = quats.vec()[2];
+       new_marker.pose.orientation.w = quats.w();
 
         // mouth status display
         mouthOpen = checkMouth(shape);
@@ -293,8 +261,19 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
             marker_arr.markers.push_back(new_marker);
 
-      }
+      // Project a 3D point (0, 0, 1000.0) onto the image plane.
+      // We use this to draw a line sticking out of the nose
+      /*
+      std::vector<cv::Point3d> StomionPoint3D;
+      std::vector<cv::Point2d> StomionPoint2D;
+      StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
+      cv::projectPoints(StomionPoint3D, rvec, tvec, cameraMatrix, distCoeffs, StomionPoint2D);
 
+      // draw line between nose points in image and 3D nose points
+      // projected to image plane
+      cv::line(im,imagePoints[0], StomionPoint2D[0], cv::Scalar(255,0,0), 2);
+      */
+      }
 
       // publish the marker array
       marker_array_pub.publish(marker_arr);
@@ -344,8 +323,8 @@ int main(int argc, char **argv)
 
    std::string MarkerTopic = "/camera/color/image_raw";
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
-   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
+   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
