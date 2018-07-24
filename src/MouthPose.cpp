@@ -309,7 +309,9 @@ int main(int argc, char **argv)
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
 
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
+
    ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
 
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
