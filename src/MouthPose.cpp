@@ -261,7 +261,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
       // Project a 3D point (0, 0, 1000.0) onto the image plane.
       // We use this to draw a line sticking out of the nose
-      /*
       std::vector<cv::Point3d> StomionPoint3D;
       std::vector<cv::Point2d> StomionPoint2D;
       StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
@@ -270,7 +269,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // draw line between nose points in image and 3D nose points
       // projected to image plane
       cv::line(im,imagePoints[0], StomionPoint2D[0], cv::Scalar(255,0,0), 2);
-      */
       }
 
       // publish the marker array
