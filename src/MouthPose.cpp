@@ -211,8 +211,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
 
-       cv::Vec3d tvecV;
-       cv::Vec3d rvecV;
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
 
