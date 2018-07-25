@@ -26,7 +26,7 @@ using namespace std;
 using namespace sensor_msgs;
 
 #define FACE_DOWNSAMPLE_RATIO 2
-#define SKIP_FRAMES 5
+#define SKIP_FRAMES 1
 #define OPENCV_FACE_RENDER
 
 // global declarations
