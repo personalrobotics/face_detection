@@ -17,8 +17,8 @@
 #include "face_detection/mouth_status_estimation.hpp"
 #include "std_msgs/String.h"
 #include <sstream>
-#include <Eigen/Geometry>
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
 #include <opencv2/core/eigen.hpp>
 
 using namespace dlib;
@@ -215,6 +215,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
        Eigen::Quaterniond EigenQuat(mat);
 
        quats = EigenQuat;
+
+      // throw away impossible poses
+       if (translationVector.at<double>(2) < 100) {
+         return;
+       }
 
        // fill up a Marker
        visualization_msgs::Marker new_marker;
