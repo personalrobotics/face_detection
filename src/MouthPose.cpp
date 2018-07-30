@@ -20,20 +20,18 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <opencv2/core/eigen.hpp>
+#include <mutex>
 
 using namespace dlib;
 using namespace std;
 using namespace sensor_msgs;
 
 #define FACE_DOWNSAMPLE_RATIO 2
-#define SKIP_FRAMES 5
+#define SKIP_FRAMES 1
 #define OPENCV_FACE_RENDER
 
 // global declarations
-
-cv::Mat rvec;
-cv::Mat tvec;
-
+uint32 stommionPointx, stommionPointy;
 cv::Mat rotationVector;
 cv::Mat translationVector;
 
@@ -51,6 +49,9 @@ ros::Publisher marker_array_pub;
 cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
 
+double oldX, oldY, oldZ;
+bool firstTimeDepth = true;
+bool firstTimeImage = true;
 
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
 std::vector<cv::Point3d> get3dModelPoints()
@@ -123,7 +124,6 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
 }
 
-
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   try
@@ -152,9 +152,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // Pose estimation
       std::vector<cv::Point3d> modelPoints = get3dModelPoints();
 
-      // Marker Array begin
-      visualization_msgs::MarkerArray marker_arr;
-
       // Iterate over faces
       std::vector<full_object_detection> shapes;
       for (unsigned long i = 0; i < faces.size(); ++i)
@@ -177,35 +174,18 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
        // get 2D landmarks from Dlib's shape object
        std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
+       stommionPointx = imagePoints[0].x;
+       stommionPointy = imagePoints[0].y;
 
        // calculate rotation and translation vector using solvePnP
 
-       rvec=cv::Mat::zeros(3, 1, CV_32F);
-       tvec=cv::Mat::zeros(3, 1, CV_32F);
-
        cv::Mat R;
-
-       cv::Mat R_z = (cv::Mat_<double>(3,3) <<
-               0.0,    -1.0,      0.0,
-               1.0, 0.0, 0.0,
-               0.0,0.0,1.0);
-
-       cv::Mat R_y = (cv::Mat_<double>(3,3) <<
-               0.0,    0.0,      1.0,
-               0.0, 1.0, 0.0,
-               -1.0,0.0,0.0);
-
-       cv::Mat R_x = (cv::Mat_<double>(3,3) <<
-               1.0,    0.0,      0.0,
-               0.0, 0.0, -1.0,
-               0.0,1.0,0.0);
 
        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
 
-       //R = R_x*R_z*R;
 
        cv::Rodrigues(rotationVector,R);
 
@@ -216,59 +196,33 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
        quats = EigenQuat;
 
-      // throw away impossible poses
-       if (translationVector.at<double>(2) < 100) {
-         return;
-       }
-
-       // fill up a Marker
-       visualization_msgs::Marker new_marker;
-
-       // Grab the position
-
-       new_marker.pose.position.x =(translationVector.at<double>(0)) / 1000;
-       new_marker.pose.position.y =(translationVector.at<double>(1)) / 1000;
-       new_marker.pose.position.z =(translationVector.at<double>(2)) / 1000;
-
-       new_marker.pose.orientation.x = quats.vec()[0];
-       new_marker.pose.orientation.y = quats.vec()[1];
-       new_marker.pose.orientation.z = quats.vec()[2];
-       new_marker.pose.orientation.w = quats.w();
 
         // mouth status display
         mouthOpen = checkMouth(shape);
-        if (mouthOpen == true){
-            cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
-                cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
-            // Grab the mouth status when the mouth is open
-            new_marker.text="{\"id\": \"mouth\", \"mouth-status\": \"open\"}";
-            new_marker.ns="mouth";
-            } else {
-            cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
-               cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
-            // Grab the mouth status when the mouth is closed
-            new_marker.text="{\"id\": \"mouth\", \"mouth-status\": \"closed\"}";
-            new_marker.ns="mouth";
-            }
-
-            new_marker.header.frame_id="/camera_color_optical_frame";
-
-            marker_arr.markers.push_back(new_marker);
 
       // Project a 3D point (0, 0, 100.0) onto the image plane.
       // We use this to draw a line sticking out of the stomion
-      std::vector<cv::Point3d> StomionPoint3D;
-      std::vector<cv::Point2d> StomionPoint2D;
-      StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
-      cv::projectPoints(StomionPoint3D, rvec, tvec, cameraMatrix, distCoeffs, StomionPoint2D);
+      // std::vector<cv::Point3d> StomionPoint3D;
+      // std::vector<cv::Point2d> StomionPoint2D;
+      // StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
+      // cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
       // projected to image plane
-      cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0), 2);
+      // cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0), 2);
+
+
+        // std::vector<cv::Point2d> reprojectedPoints;
+        // cv::projectPoints(modelPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
+        // for (auto point : reprojectedPoints) {
+        //   cv::circle(im, point, 3, cv::Scalar(50, 255, 70, 255), 5);
+        // }
       }
 
+      firstTimeImage = false;
+
       // publish the marker array
-      marker_array_pub.publish(marker_arr);
+      // marker_array_pub.publish(marker_arr);
 
       // Resize image for display
       imDisplay = im;
@@ -281,6 +235,89 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
+}
+
+void publishMarker(float tx, float ty, float tz) {
+  visualization_msgs::Marker new_marker;
+  new_marker.pose.position.x = tx;
+  new_marker.pose.position.y = ty;
+  new_marker.pose.position.z = tz;
+
+  new_marker.pose.orientation.x = 0.707;
+  new_marker.pose.orientation.y = 0;
+  new_marker.pose.orientation.z = 0;
+  new_marker.pose.orientation.w = 0.707;
+
+  // mouth status display
+  if (mouthOpen == true){
+    cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
+        cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
+    // Grab the mouth status when the mouth is open
+    new_marker.text="{\"id\": \"mouth\", \"mouth-status\": \"open\"}";
+    new_marker.ns="mouth";
+  } else {
+    cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
+       cv::FONT_HERSHEY_COMPLEX, 1.5,cv::Scalar(0, 0, 255), 3);
+    // Grab the mouth status when the mouth is closed
+    new_marker.text="{\"id\": \"mouth\", \"mouth-status\": \"closed\"}";
+    new_marker.ns="mouth";
+  }
+
+  new_marker.header.frame_id="/camera_color_optical_frame";
+
+  visualization_msgs::MarkerArray marker_arr;
+  marker_arr.markers.push_back(new_marker);
+  marker_array_pub.publish(marker_arr);marker_array_pub.publish(marker_arr);
+}
+
+void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
+  cv_bridge::CvImageConstPtr depth_img_cv;
+  cv::Mat depth_mat;
+  // Get the ROS image to openCV
+  depth_img_cv = cv_bridge::toCvShare (depth_img_ros, sensor_msgs::image_encodings::TYPE_16UC1);
+  // Convert the uints to floats
+  depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);
+  //cout << (float)(depth_img_cv[stommionPointy*depth_img_ros->width + stommionPointx]);
+  //cout << depth_mat[(int)(stommionPointy*depth_img_ros->width + stommionPointx)];
+  //cout << "stommion x: " << stommionPointx << ",  stommion y: " << stommionPointy << endl;
+  cout << "depth: " << depth_mat.at<float>(stommionPointx, stommionPointy) << endl;
+
+  double cam_fx = cameraMatrix.at<double>(0, 0);
+  double cam_fy = cameraMatrix.at<double>(1, 1);
+  double cam_cx = cameraMatrix.at<double>(0, 2);
+  double cam_cy = cameraMatrix.at<double>(1, 2);
+  double tz = depth_mat.at<float>(stommionPointx, stommionPointy);  
+  double tx = (tz / cam_fx) * (stommionPointx - cam_cx);
+  double ty = (tz / cam_fy) * (stommionPointy - cam_cy);
+  //tvec = np.array([tx, ty, tz])
+  // cout << "position: (" << tx << ", " << ty << ", " << tz << ")" << endl;
+
+  if (firstTimeImage) {
+    std::cout << "skipping because image not yet received" << std::endl;
+    return;
+  }
+
+  double squareDist = (tx-oldX)*(tx-oldX) + (ty-oldY)*(ty-oldY) + (tz-oldZ)*(tz-oldZ);
+  //std::cout << "tz: " << tz << ",    squareDist: " << squareDist << ",  firstTimeDepth: " << firstTimeDepth << std::endl;
+
+  if (tz < 0.3) {
+    std::cout << "calculated depth too short. Skipping frame" << std::endl;
+    publishMarker(oldX, oldY, oldZ);
+    return;
+  }
+
+  if (squareDist > 0.2*0.2 && !firstTimeDepth) {
+    std::cout << "calculated pose too far. Skipping frame" << std::endl;
+    publishMarker(oldX, oldY, oldZ);
+    return;
+  }
+
+  firstTimeDepth = false;
+  oldX = tx;
+  oldY = ty;
+  oldZ = tz;
+
+  publishMarker(tx,ty,tz);
 }
 
 void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
@@ -317,6 +354,7 @@ int main(int argc, char **argv)
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+   ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
