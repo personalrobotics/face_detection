@@ -26,7 +26,7 @@ using namespace std;
 using namespace sensor_msgs;
 
 #define FACE_DOWNSAMPLE_RATIO 2
-#define SKIP_FRAMES 1
+#define SKIP_FRAMES 5
 #define OPENCV_FACE_RENDER
 
 // global declarations
@@ -200,7 +200,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
                0.0, 0.0, -1.0,
                0.0,1.0,0.0);
 
-       cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
+       cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
@@ -215,11 +215,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
        Eigen::Quaterniond EigenQuat(mat);
 
        quats = EigenQuat;
-
+      /*
       // throw away impossible poses
        if (translationVector.at<double>(2) < 100) {
          return;
-       }
+       } */
 
        // fill up a Marker
        visualization_msgs::Marker new_marker;
@@ -260,7 +260,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       std::vector<cv::Point3d> StomionPoint3D;
       std::vector<cv::Point2d> StomionPoint2D;
       StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
-      cv::projectPoints(StomionPoint3D, rvec, tvec, cameraMatrix, distCoeffs, StomionPoint2D);
+      cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
       // projected to image plane
