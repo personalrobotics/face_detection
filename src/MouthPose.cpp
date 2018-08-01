@@ -71,16 +71,17 @@ bool firstTimeImage = true;
 
 // Distance funtion to obtain relative distances/co-ordinates for the 3D model points in the real world
 
-std::vector<cv::Point3d> dist(std::vector<cv::Point3d> Origin ,std::vector<cv::Point3d> Point)
+cv::Point3d dist(cv::Point3d Origin ,cv::Point3d Point)
 {
 
-std::vector<cv::Point3d> co_ordinates;
+cv::Point3d co_ordinates;
 
-co_ordinates[0]=Point[0]-Origin[0];
-co_ordinates[1]=Point[1]-Origin[1];
-co_ordinates[2]=Point[2]-Origin[2];
+co_ordinates.x=Point.x-Origin.x;
+co_ordinates.y=Point.y-Origin.y;
+co_ordinates.z=Point.z-Origin.z;
 
 return co_ordinates;
+
 }
 
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
@@ -114,16 +115,16 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
   modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner */
 
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[0])[0],dist(RealWorld3D[0],RealWorld3D[0])[1],dist(RealWorld3D[0],RealWorld3D[0])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[1])[0],dist(RealWorld3D[0],RealWorld3D[1])[1],dist(RealWorld3D[0],RealWorld3D[1])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[2])[0],dist(RealWorld3D[0],RealWorld3D[2])[1],dist(RealWorld3D[0],RealWorld3D[2])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[3])[0],dist(RealWorld3D[0],RealWorld3D[3])[1],dist(RealWorld3D[0],RealWorld3D[3])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[4])[0],dist(RealWorld3D[0],RealWorld3D[4])[1],dist(RealWorld3D[0],RealWorld3D[4])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[5])[0],dist(RealWorld3D[0],RealWorld3D[5])[1],dist(RealWorld3D[0],RealWorld3D[5])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[6])[0],dist(RealWorld3D[0],RealWorld3D[6])[1],dist(RealWorld3D[0],RealWorld3D[6])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[7])[0],dist(RealWorld3D[0],RealWorld3D[7])[1],dist(RealWorld3D[0],RealWorld3D[7])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[8])[0],dist(RealWorld3D[0],RealWorld3D[8])[1],dist(RealWorld3D[0],RealWorld3D[8])[2]));
-  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[9])[0],dist(RealWorld3D[0],RealWorld3D[9])[1],dist(RealWorld3D[0],RealWorld3D[9])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[0]).x,dist(RealWorld3D[0],RealWorld3D[0]).y,dist(RealWorld3D[0],RealWorld3D[0]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[1]).x,dist(RealWorld3D[0],RealWorld3D[1]).y,dist(RealWorld3D[0],RealWorld3D[1]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[2]).x,dist(RealWorld3D[0],RealWorld3D[2]).y,dist(RealWorld3D[0],RealWorld3D[2]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[3]).x,dist(RealWorld3D[0],RealWorld3D[3]).y,dist(RealWorld3D[0],RealWorld3D[3]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[4]).x,dist(RealWorld3D[0],RealWorld3D[4]).y,dist(RealWorld3D[0],RealWorld3D[4]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[5]).x,dist(RealWorld3D[0],RealWorld3D[5]).y,dist(RealWorld3D[0],RealWorld3D[5]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[6]).x,dist(RealWorld3D[0],RealWorld3D[6]).y,dist(RealWorld3D[0],RealWorld3D[6]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[7]).x,dist(RealWorld3D[0],RealWorld3D[7]).y,dist(RealWorld3D[0],RealWorld3D[7]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[8]).x,dist(RealWorld3D[0],RealWorld3D[8]).y,dist(RealWorld3D[0],RealWorld3D[8]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[9]).x,dist(RealWorld3D[0],RealWorld3D[9]).y,dist(RealWorld3D[0],RealWorld3D[9]).z));
 
   return modelPoints;
 
@@ -309,14 +310,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
       // Project a 3D point (0, 0, 100.0) onto the image plane.
       // We use this to draw a line sticking out of the stomion
-      // std::vector<cv::Point3d> StomionPoint3D;
-      // std::vector<cv::Point2d> StomionPoint2D;
-      // StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
-      // cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
+       std::vector<cv::Point3d> StomionPoint3D;
+       std::vector<cv::Point2d> StomionPoint2D;
+       StomionPoint3D.push_back(cv::Point3d(0,0,10.0));
+       cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
       // projected to image plane
-      // cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0), 2);
+       cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0), 2);
 
 
         // std::vector<cv::Point2d> reprojectedPoints;
