@@ -76,9 +76,9 @@ std::vector<cv::Point3d> dist(std::vector<cv::Point3d> Origin ,std::vector<cv::P
 
 std::vector<cv::Point3d> co_ordinates;
 
-co_ordinates.x=Origin.x-Point.x;
-co_ordinates.y=Origin.y-Point.y;
-co_ordinates.z=Origin.z-Point.z;
+co_ordinates[0]=Point[0]-Origin[0];
+co_ordinates[1]=Point[1]-Origin[1];
+co_ordinates[2]=Point[2]-Origin[2];
 
 return co_ordinates;
 }
@@ -114,16 +114,16 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
   modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner */
 
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[0]).x,dist(RealWorld3D[0],RealWorld3D[0]).y,dist(RealWorld3D[0],RealWorld3D[0]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[1]).x,dist(RealWorld3D[0],RealWorld3D[1]).y,dist(RealWorld3D[0],RealWorld3D[1]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[2]).x,dist(RealWorld3D[0],RealWorld3D[2]).y,dist(RealWorld3D[0],RealWorld3D[2]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[3]).x,dist(RealWorld3D[0],RealWorld3D[3]).y,dist(RealWorld3D[0],RealWorld3D[3]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[4]).x,dist(RealWorld3D[0],RealWorld3D[4]).y,dist(RealWorld3D[0],RealWorld3D[4]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[5]).x,dist(RealWorld3D[0],RealWorld3D[5]).y,dist(RealWorld3D[0],RealWorld3D[5]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[6]).x,dist(RealWorld3D[0],RealWorld3D[6]).y,dist(RealWorld3D[0],RealWorld3D[6]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[7]).x,dist(RealWorld3D[0],RealWorld3D[7]).y,dist(RealWorld3D[0],RealWorld3D[7]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[8]).x,dist(RealWorld3D[0],RealWorld3D[8]).y,dist(RealWorld3D[0],RealWorld3D[8]).z));
-  modelPoint.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[9]).x,dist(RealWorld3D[0],RealWorld3D[9]).y,dist(RealWorld3D[0],RealWorld3D[9]).z));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[0])[0],dist(RealWorld3D[0],RealWorld3D[0])[1],dist(RealWorld3D[0],RealWorld3D[0])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[1])[0],dist(RealWorld3D[0],RealWorld3D[1])[1],dist(RealWorld3D[0],RealWorld3D[1])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[2])[0],dist(RealWorld3D[0],RealWorld3D[2])[1],dist(RealWorld3D[0],RealWorld3D[2])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[3])[0],dist(RealWorld3D[0],RealWorld3D[3])[1],dist(RealWorld3D[0],RealWorld3D[3])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[4])[0],dist(RealWorld3D[0],RealWorld3D[4])[1],dist(RealWorld3D[0],RealWorld3D[4])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[5])[0],dist(RealWorld3D[0],RealWorld3D[5])[1],dist(RealWorld3D[0],RealWorld3D[5])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[6])[0],dist(RealWorld3D[0],RealWorld3D[6])[1],dist(RealWorld3D[0],RealWorld3D[6])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[7])[0],dist(RealWorld3D[0],RealWorld3D[7])[1],dist(RealWorld3D[0],RealWorld3D[7])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[8])[0],dist(RealWorld3D[0],RealWorld3D[8])[1],dist(RealWorld3D[0],RealWorld3D[8])[2]));
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[9])[0],dist(RealWorld3D[0],RealWorld3D[9])[1],dist(RealWorld3D[0],RealWorld3D[9])[2]));
 
   return modelPoints;
 
@@ -190,8 +190,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
         faces = detector(cimgSmall);
       }
 
+
       // Pose estimation
 
+      // Marker Array begin
+      visualization_msgs::MarkerArray marker_arr;
 
       // Iterate over faces
       std::vector<full_object_detection> shapes;
@@ -240,8 +243,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
        LeftEyeLidPointx = imagePoints[7].x;
        LeftEyeLidPointy = imagePoints[7].y;
 
-       RightLipCornerxPointx = imagePoints[8].x;
-       RightLipCorneryPointy = imagePoints[8].y;
+       RightLipCornerPointx = imagePoints[8].x;
+       RightLipCornerPointy = imagePoints[8].y;
 
        LeftLipCornerPointx = imagePoints[9].x;
        LeftLipCornerPointy = imagePoints[9].y;
@@ -326,7 +329,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       firstTimeImage = false;
 
       // publish the marker array
-       marker_array_pub.publish(marker_arr);
+      marker_array_pub.publish(marker_arr);
 
       // Resize image for display
       imDisplay = im;
