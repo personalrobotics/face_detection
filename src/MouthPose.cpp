@@ -43,8 +43,6 @@ uint32 LeftEyeLidPointx, LeftEyeLidPointy;
 uint32 RightLipCornerPointx, RightLipCornerPointy;
 uint32 LeftLipCornerPointx, LeftLipCornerPointy;
 
-std::vector<cv::Point3d> RealWorldPoints;
-
 std::vector<cv::Point3d> RealWorld3D;
 
 
@@ -250,17 +248,21 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
        LeftLipCornerPointx = imagePoints[9].x;
        LeftLipCornerPointy = imagePoints[9].y;
 
+      // if(RealWorld3D)
+      // return 0;
+
+
        std::vector<cv::Point3d> modelPoints = get3dModelPoints();
 
        // calculate rotation and translation vector using solvePnP
 
        cv::Mat R;
 
+
        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
-
 
        cv::Rodrigues(rotationVector,R);
 
@@ -316,7 +318,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
       // draw line between stomion points in image and 3D stomion points
       // projected to image plane
-       cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0), 2);
+       cv::line(im, imagePoints[0],StomionPoint2D[0] , cv::Scalar(255,0,0), 2);
 
 
         // std::vector<cv::Point2d> reprojectedPoints;
@@ -408,6 +410,8 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   //cout << t1x << " " << t1y << endl;
 
   // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
+  RealWorld3D.clear();
+
   RealWorld3D.push_back(cv::Point3d(t1x,t1y,Stommionz));
   RealWorld3D.push_back(cv::Point3d(t2x,t2y,RightEyez));
   RealWorld3D.push_back(cv::Point3d(t3x,t3y,LeftEyez));
@@ -419,7 +423,9 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   RealWorld3D.push_back(cv::Point3d(t9x,t9y,RightLipCornerz));
   RealWorld3D.push_back(cv::Point3d(t10x,t10y,LeftLipCornerz));
 
-  cout << RealWorld3D[0].z << endl ;
+
+  cout << endl << t1x <<" ," <<t1y <<" ," <<Stommionz << endl <<cv::Point3d(t1x,t1y,Stommionz) << endl ;
+  cout << RealWorld3D[0] << endl ;
 
 }
 
@@ -454,8 +460,8 @@ int main(int argc, char **argv)
    std::string MarkerTopic = "/camera/color/image_raw";
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
-   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
+   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
