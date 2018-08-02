@@ -45,10 +45,11 @@ uint32 LeftLipCornerPointx, LeftLipCornerPointy;
 
 std::vector<cv::Point3d> RealWorld3D;
 
-
 cv::Mat rotationVector;
 cv::Mat translationVector;
 
+
+int flags;
 bool mouthOpen; // store status of mouth being open or closed
 cv::Mat im; // matrix to store the image
 int counter=0;
@@ -62,10 +63,6 @@ ros::Publisher marker_array_pub;
 
 cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
-
-double oldX, oldY, oldZ;
-bool firstTimeDepth = true;
-bool firstTimeImage = true;
 
 // Distance funtion to obtain relative distances/co-ordinates for the 3D model points in the real world
 
@@ -87,31 +84,7 @@ std::vector<cv::Point3d> get3dModelPoints()
 {
   std::vector<cv::Point3d> modelPoints;
 
-  // sellion origin
-  // X direction points forward projecting out of the person's stomion
-/*
-  modelPoints.push_back(cv::Point3d(0.0, 0.0, 0.0));    // Sellion
-  modelPoints.push_back(cv::Point3d(-20., -65.5,-5.));  // Right Eye
-  modelPoints.push_back(cv::Point3d(-20., 65.5,-5.));   // Left Eye
-  modelPoints.push_back(cv::Point3d(-100., -77.5,-6.)); // Right Ear
-  modelPoints.push_back(cv::Point3d(-100., 77.5,-6.));  // Left Ear
-  modelPoints.push_back(cv::Point3d(21.0, 0., -48.0));  // Nose
-  modelPoints.push_back(cv::Point3d(10.0, 0., -75.0));  // Stommion
-  modelPoints.push_back(cv::Point3d(0., 0.,-133.0));    // Menton
-
-  // Stomion Origin
-  // X direction points forward projecting out of the person's stomion
-
-  modelPoints.push_back(cv::Point3d(0., 0., 0.));  // Stommion
-  modelPoints.push_back(cv::Point3d(-30.0, -65.5,70.0));  // Right Eye
-  modelPoints.push_back(cv::Point3d(-30.0, 65.5,70.));   // Left Eye
-  modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
-  modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
-  modelPoints.push_back(cv::Point3d(-10.0, 0.,-58.0));    // Menton
-  modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
-  modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
-  modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
-  modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner */
+  modelPoints.clear();
 
   modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[0]).x,dist(RealWorld3D[0],RealWorld3D[0]).y,dist(RealWorld3D[0],RealWorld3D[0]).z));
   modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[1]).x,dist(RealWorld3D[0],RealWorld3D[1]).y,dist(RealWorld3D[0],RealWorld3D[1]).z));
@@ -123,6 +96,8 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[7]).x,dist(RealWorld3D[0],RealWorld3D[7]).y,dist(RealWorld3D[0],RealWorld3D[7]).z));
   modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[8]).x,dist(RealWorld3D[0],RealWorld3D[8]).y,dist(RealWorld3D[0],RealWorld3D[8]).z));
   modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[9]).x,dist(RealWorld3D[0],RealWorld3D[9]).y,dist(RealWorld3D[0],RealWorld3D[9]).z));
+
+  //cout << modelPoints[0] << endl << modelPoints[1] << endl;
 
   return modelPoints;
 
@@ -159,6 +134,8 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
   imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
   imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
+
+
 
   return imagePoints;
 
@@ -258,8 +235,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
        cv::Mat R;
 
-
-       cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
+       cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
+       //cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector,flags=cv::SOLVEPNP_P3P);
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
@@ -313,22 +290,20 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // We use this to draw a line sticking out of the stomion
        std::vector<cv::Point3d> StomionPoint3D;
        std::vector<cv::Point2d> StomionPoint2D;
-       StomionPoint3D.push_back(cv::Point3d(0,0,10.0));
+       StomionPoint3D.push_back(cv::Point3d(0,0,1000.0));
        cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
       // projected to image plane
        cv::line(im, imagePoints[0],StomionPoint2D[0] , cv::Scalar(255,0,0), 2);
 
-
-        // std::vector<cv::Point2d> reprojectedPoints;
-        // cv::projectPoints(modelPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
-        // for (auto point : reprojectedPoints) {
-        //   cv::circle(im, point, 3, cv::Scalar(50, 255, 70, 255), 5);
-        // }
+/*
+           std::vector<cv::Point2d> reprojectedPoints;
+           cv::projectPoints(modelPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
+           for (auto point : reprojectedPoints) {
+           cv::circle(im, point, 3, cv::Scalar(50, 255, 70, 255), 5);
+         }*/
       }
-
-      firstTimeImage = false;
 
       // publish the marker array
       marker_array_pub.publish(marker_arr);
@@ -362,10 +337,10 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
 
   // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
 
-  double Stommionz = depth_mat.at<double>(stommionPointx, stommionPointy);
-  double RightEyez = depth_mat.at<double>(RightEyePointx, RightEyePointy);
-  double LeftEyez = depth_mat.at<double>(LeftEyePointx, LeftEyePointy);
-  double Nosez = depth_mat.at<double>(NosePointx, NosePointy);
+  double Stommionz = depth_mat.at<float>(stommionPointx, stommionPointy);
+  double RightEyez = depth_mat.at<float>(RightEyePointx, RightEyePointy);
+  double LeftEyez = depth_mat.at<float>(LeftEyePointx, LeftEyePointy);
+  double Nosez = depth_mat.at<float>(NosePointx, NosePointy);
   double Sellionz = depth_mat.at<float>(SellionPointx, SellionPointy);
   double Mentonz = depth_mat.at<float>(MentonPointx, MentonPointy);
   double RightEyeLidz = depth_mat.at<float>(RightEyeLidPointx, RightEyeLidPointy);
@@ -413,6 +388,8 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   RealWorld3D.clear();
 
   RealWorld3D.push_back(cv::Point3d(t1x,t1y,Stommionz));
+  //RealWorld3D.push_back(cv::Point3d(t4x,t4y,Nosez));
+
   RealWorld3D.push_back(cv::Point3d(t2x,t2y,RightEyez));
   RealWorld3D.push_back(cv::Point3d(t3x,t3y,LeftEyez));
   RealWorld3D.push_back(cv::Point3d(t4x,t4y,Nosez));
