@@ -45,6 +45,8 @@ uint32 LeftLipCornerPointx, LeftLipCornerPointy;
 
 std::vector<cv::Point3d> RealWorld3D;
 
+std::vector<cv::Point3d> modelPoints3D;
+
 cv::Mat rotationVector;
 cv::Mat translationVector;
 
@@ -78,6 +80,35 @@ co_ordinates.z=Point.z-Origin.z;
 return co_ordinates;
 
 }
+
+
+// 3D Model Points of selected landmarks in an arbitrary frame of reference
+std::vector<cv::Point3d> get3dModelPointsInit()
+{
+  std::vector<cv::Point3d> modelPoints;
+
+  modelPoints.clear();
+
+  // Stomion Origin
+  // X direction points forward projecting out of the person's stomion
+
+  modelPoints.push_back(cv::Point3d(0., 0., 0.));  // Stommion
+  modelPoints.push_back(cv::Point3d(-30.0, -65.5,70.0));  // Right Eye
+  modelPoints.push_back(cv::Point3d(-30.0, 65.5,70.));   // Left Eye
+  modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
+  modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
+  modelPoints.push_back(cv::Point3d(-10.0, 0.,-58.0));    // Menton
+  modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
+  modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
+  modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
+  modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
+
+  //cout << modelPoints[0] << endl << modelPoints[1] << endl;
+
+  return modelPoints;
+
+}
+
 
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
 std::vector<cv::Point3d> get3dModelPoints()
@@ -228,15 +259,16 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // if(RealWorld3D)
       // return 0;
 
+       modelPoints3D.clear();
 
-       std::vector<cv::Point3d> modelPoints = get3dModelPoints();
+       modelPoints3D = get3dModelPoints();
 
        // calculate rotation and translation vector using solvePnP
 
        cv::Mat R;
 
-       cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
-       //cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector,flags=cv::SOLVEPNP_P3P);
+       cv::solvePnP(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
+       //cv::solvePnPRansac(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector,flags=cv::SOLVEPNP_P3P);
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
@@ -429,6 +461,9 @@ int main(int argc, char **argv)
 {
   try
   {
+
+   RealWorld3D.clear();
+   RealWorld3D = get3dModelPointsInit();
 
    ros::init(argc, argv, "image_listener");
    ros::NodeHandle nh;
