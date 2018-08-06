@@ -34,6 +34,7 @@ using namespace sensor_msgs;
 uint32 stommionPointx, stommionPointy;
 cv::Mat rotationVector;
 cv::Mat translationVector;
+ros::NodeHandle nh;
 
 bool mouthOpen; // store status of mouth being open or closed
 cv::Mat im; // matrix to store the image
@@ -126,6 +127,9 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
+  bool facePerceptionOn = true;
+  if (!nh.getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
+  if (!facePerceptionOn) { return; }
   try
   {
       im = cv_bridge::toCvShare(msg, "bgr8")->image;
@@ -225,10 +229,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // marker_array_pub.publish(marker_arr);
 
       // Resize image for display
-      imDisplay = im;
-      cv::resize(im, imDisplay, cv::Size(), 1, 1);
-      cv::imshow("Face Pose Detector", imDisplay);
-      cv::waitKey(1);
+      // imDisplay = im;
+      // cv::resize(im, imDisplay, cv::Size(), 1, 1);
+      // cv::imshow("Face Pose Detector", imDisplay);
+      // cv::waitKey(30);
 
   }
   catch (cv_bridge::Exception& e)
@@ -271,6 +275,10 @@ void publishMarker(float tx, float ty, float tz) {
 }
 
 void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
+  bool facePerceptionOn = true;
+  if (!nh.getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
+  if (!facePerceptionOn) { return; }
+
   cv_bridge::CvImageConstPtr depth_img_cv;
   cv::Mat depth_mat;
   // Get the ROS image to openCV
@@ -382,7 +390,6 @@ int main(int argc, char **argv)
   {
 
    ros::init(argc, argv, "image_listener");
-   ros::NodeHandle nh;
    image_transport::ImageTransport it(nh);
 
    std::string MarkerTopic = "/camera/color/image_raw";
