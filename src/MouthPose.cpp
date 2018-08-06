@@ -280,13 +280,42 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   //cout << (float)(depth_img_cv[stommionPointy*depth_img_ros->width + stommionPointx]);
   //cout << depth_mat[(int)(stommionPointy*depth_img_ros->width + stommionPointx)];
   //cout << "stommion x: " << stommionPointx << ",  stommion y: " << stommionPointy << endl;
-  cout << "depth: " << depth_mat.at<float>(stommionPointx, stommionPointy) << endl;
+
+  if (stommionPointx >= depth_mat.cols || stommionPointy >= depth_mat.rows) {
+    std::cout << "invalid points or depth mat. points: (" << stommionPointx << ", " << stommionPointy << ") mat: (" << depth_mat.cols << ", " << depth_mat.rows << ")" << std::endl;
+    return;
+  }
+
+  cout << "depth: " << depth_mat.at<float>(stommionPointx, stommionPointy) << "  stommion at: (" << stommionPointx << ", " << stommionPointy << ") mat: (" << depth_mat.cols << ", " << depth_mat.rows << ")" << std::endl;
+
+  float averageDepth = 0;
+  int depthCounts = 0;
+
+  for (int x=std::max(0, (int)stommionPointx-4); x<std::min(depth_mat.cols, (int)stommionPointx+5); x++) {
+    for (int y=std::max(0, (int)stommionPointy-4); y<std::min(depth_mat.rows, (int)stommionPointy+5); y++) {
+      float depth = depth_mat.at<float>(x, y);
+      if (depth > 0.0001) {
+        averageDepth += depth;
+        depthCounts++;
+      }
+  //    std::cout << depth << ", ";
+    }
+  //  std::cout << std::endl;
+  }
+  averageDepth /= depthCounts;
+
+  std::cout << "average depth: " << averageDepth << std::endl;
+
+  if (depthCounts == 0) {
+    std::cout << "depth at stommion is zero! Skipping..." << std::endl;
+    return; 
+  }
 
   double cam_fx = cameraMatrix.at<double>(0, 0);
   double cam_fy = cameraMatrix.at<double>(1, 1);
   double cam_cx = cameraMatrix.at<double>(0, 2);
   double cam_cy = cameraMatrix.at<double>(1, 2);
-  double tz = depth_mat.at<float>(stommionPointx, stommionPointy);  
+  double tz = averageDepth;  
   double tx = (tz / cam_fx) * (stommionPointx - cam_cx);
   double ty = (tz / cam_fy) * (stommionPointy - cam_cy);
   //tvec = np.array([tx, ty, tz])
@@ -301,15 +330,21 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   //std::cout << "tz: " << tz << ",    squareDist: " << squareDist << ",  firstTimeDepth: " << firstTimeDepth << std::endl;
 
   if (tz < 0.3) {
-    std::cout << "calculated depth too short. Skipping frame" << std::endl;
+    std::cout << "calculated depth too close. Skipping frame" << std::endl;
+    publishMarker(oldX, oldY, oldZ);
+    return;
+  }
+
+  if (tz > 1.0) {
+    std::cout << "calculated depth too far. Skipping frame" << std::endl;
     publishMarker(oldX, oldY, oldZ);
     return;
   }
 
   if (squareDist > 0.2*0.2 && !firstTimeDepth) {
-    std::cout << "calculated pose too far. Skipping frame" << std::endl;
-    publishMarker(oldX, oldY, oldZ);
-    return;
+    std::cout << "calculated pose would be too far" << std::endl;
+    // publishMarker(oldX, oldY, oldZ);
+    // return;
   }
 
   firstTimeDepth = false;
@@ -351,8 +386,9 @@ int main(int argc, char **argv)
    image_transport::ImageTransport it(nh);
 
    std::string MarkerTopic = "/camera/color/image_raw";
-   deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
+   deserialize("/home/herb/Workspace/ada_ws/src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
+  //  image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
