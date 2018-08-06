@@ -34,7 +34,7 @@ using namespace sensor_msgs;
 uint32 stommionPointx, stommionPointy;
 cv::Mat rotationVector;
 cv::Mat translationVector;
-ros::NodeHandle nh;
+std::unique_ptr<ros::NodeHandle> nh;
 
 bool mouthOpen; // store status of mouth being open or closed
 cv::Mat im; // matrix to store the image
@@ -128,7 +128,7 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   bool facePerceptionOn = true;
-  if (!nh.getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
+  if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
   if (!facePerceptionOn) { return; }
   try
   {
@@ -229,10 +229,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // marker_array_pub.publish(marker_arr);
 
       // Resize image for display
-      // imDisplay = im;
-      // cv::resize(im, imDisplay, cv::Size(), 1, 1);
-      // cv::imshow("Face Pose Detector", imDisplay);
-      // cv::waitKey(30);
+      imDisplay = im;
+      cv::resize(im, imDisplay, cv::Size(), 1, 1);
+      cv::imshow("Face Pose Detector", imDisplay);
+      cv::waitKey(30);
 
   }
   catch (cv_bridge::Exception& e)
@@ -276,7 +276,7 @@ void publishMarker(float tx, float ty, float tz) {
 
 void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   bool facePerceptionOn = true;
-  if (!nh.getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
+  if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
   if (!facePerceptionOn) { return; }
 
   cv_bridge::CvImageConstPtr depth_img_cv;
@@ -388,17 +388,17 @@ int main(int argc, char **argv)
 {
   try
   {
-
    ros::init(argc, argv, "image_listener");
-   image_transport::ImageTransport it(nh);
+   nh = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle);
+   image_transport::ImageTransport it(*nh);
 
    std::string MarkerTopic = "/camera/color/image_raw";
    deserialize("/home/herb/Workspace/ada_ws/src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
-   ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
+   ros::Subscriber sub_info = nh->subscribe("/camera/color/camera_info", 1, cameraInfo);
   //  image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
-   ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
-   marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
+   ros::Subscriber sub_depth = nh->subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
+   marker_array_pub = nh->advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
   }
