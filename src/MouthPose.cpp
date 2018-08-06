@@ -129,7 +129,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
-  if (!facePerceptionOn) { return; }
+  if (!facePerceptionOn) {
+    cv::destroyAllWindows();
+    return;
+  }
   try
   {
       im = cv_bridge::toCvShare(msg, "bgr8")->image;
@@ -277,7 +280,10 @@ void publishMarker(float tx, float ty, float tz) {
 void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
-  if (!facePerceptionOn) { return; }
+  if (!facePerceptionOn) {
+    cv::destroyAllWindows();
+    return;
+  }
 
   cv_bridge::CvImageConstPtr depth_img_cv;
   cv::Mat depth_mat;
@@ -395,8 +401,8 @@ int main(int argc, char **argv)
    std::string MarkerTopic = "/camera/color/image_raw";
    deserialize("/home/herb/Workspace/ada_ws/src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh->subscribe("/camera/color/camera_info", 1, cameraInfo);
-  //  image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
-   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
+  //  image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    ros::Subscriber sub_depth = nh->subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
    marker_array_pub = nh->advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
