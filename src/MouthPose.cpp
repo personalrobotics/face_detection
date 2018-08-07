@@ -31,7 +31,9 @@ using namespace sensor_msgs;
 #define OPENCV_FACE_RENDER
 
 // global declarations
-uint32 stommionPointx, stommionPointy;
+uint32 stommionPointX, stommionPointY;
+uint32 betweenEyesPointX, betweenEyesPointY;
+int indexStommion, indexLeftEyeLid, indexRightEyeLid;
 cv::Mat rotationVector;
 cv::Mat translationVector;
 std::unique_ptr<ros::NodeHandle> nh;
@@ -109,6 +111,7 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 
 
   // Stomion Origin
+  indexStommion = imagePoints.size();
   imagePoints.push_back( cv::Point2d( (d.part(62).x()+
   d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
   imagePoints.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
@@ -116,7 +119,9 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
   imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+  indexRightEyeLid = imagePoints.size();
   imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
+  indexLeftEyeLid = imagePoints.size();
   imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
   imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
   imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
@@ -181,8 +186,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
        // get 2D landmarks from Dlib's shape object
        std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
-       stommionPointx = imagePoints[0].x;
-       stommionPointy = imagePoints[0].y;
+       stommionPointX = imagePoints[0].x;
+       stommionPointY = imagePoints[0].y;
+       betweenEyesPointX = (imagePoints[indexLeftEyeLid].x + imagePoints[indexRightEyeLid].x) / 2;
+       betweenEyesPointY = (imagePoints[indexLeftEyeLid].y + imagePoints[indexRightEyeLid].y) / 2;
 
        // calculate rotation and translation vector using solvePnP
 
@@ -291,22 +298,22 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   depth_img_cv = cv_bridge::toCvShare (depth_img_ros, sensor_msgs::image_encodings::TYPE_16UC1);
   // Convert the uints to floats
   depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);
-  //cout << (float)(depth_img_cv[stommionPointy*depth_img_ros->width + stommionPointx]);
-  //cout << depth_mat[(int)(stommionPointy*depth_img_ros->width + stommionPointx)];
-  //cout << "stommion x: " << stommionPointx << ",  stommion y: " << stommionPointy << endl;
+  //cout << (float)(depth_img_cv[stommionPointY*depth_img_ros->width + stommionPointX]);
+  //cout << depth_mat[(int)(stommionPointY*depth_img_ros->width + stommionPointX)];
+  //cout << "stommion x: " << stommionPointX << ",  stommion y: " << stommionPointY << endl;
 
-  if (stommionPointx >= depth_mat.cols || stommionPointy >= depth_mat.rows) {
-    std::cout << "invalid points or depth mat. points: (" << stommionPointx << ", " << stommionPointy << ") mat: (" << depth_mat.cols << ", " << depth_mat.rows << ")" << std::endl;
+  if (betweenEyesPointX >= depth_mat.cols || betweenEyesPointY >= depth_mat.rows) {
+    std::cout << "invalid points or depth mat. points: (" << betweenEyesPointX << ", " << betweenEyesPointY << ") mat: (" << depth_mat.cols << ", " << depth_mat.rows << ")" << std::endl;
     return;
   }
 
-  cout << "depth: " << depth_mat.at<float>(stommionPointx, stommionPointy) << "  stommion at: (" << stommionPointx << ", " << stommionPointy << ") mat: (" << depth_mat.cols << ", " << depth_mat.rows << ")" << std::endl;
+  cout << "depth: " << depth_mat.at<float>(betweenEyesPointX, betweenEyesPointY) << "  point between eyes at: (" << betweenEyesPointX << ", " << betweenEyesPointY << ") mat: (" << depth_mat.cols << ", " << depth_mat.rows << ")" << std::endl;
 
   float averageDepth = 0;
   int depthCounts = 0;
 
-  for (int x=std::max(0, (int)stommionPointx-4); x<std::min(depth_mat.cols, (int)stommionPointx+5); x++) {
-    for (int y=std::max(0, (int)stommionPointy-4); y<std::min(depth_mat.rows, (int)stommionPointy+5); y++) {
+  for (int x=std::max(0, (int)betweenEyesPointX-4); x<std::min(depth_mat.cols, (int)betweenEyesPointX+5); x++) {
+    for (int y=std::max(0, (int)betweenEyesPointY-4); y<std::min(depth_mat.rows, (int)betweenEyesPointY+5); y++) {
       float depth = depth_mat.at<float>(x, y);
       if (depth > 0.0001) {
         averageDepth += depth;
@@ -321,7 +328,7 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   std::cout << "average depth: " << averageDepth << std::endl;
 
   if (depthCounts == 0) {
-    std::cout << "depth at stommion is zero! Skipping..." << std::endl;
+    std::cout << "depth between eyes is zero! Skipping..." << std::endl;
     return; 
   }
 
@@ -330,8 +337,8 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
   double cam_cx = cameraMatrix.at<double>(0, 2);
   double cam_cy = cameraMatrix.at<double>(1, 2);
   double tz = averageDepth;  
-  double tx = (tz / cam_fx) * (stommionPointx - cam_cx);
-  double ty = (tz / cam_fy) * (stommionPointy - cam_cy);
+  double tx = (tz / cam_fx) * (stommionPointX - cam_cx);
+  double ty = (tz / cam_fy) * (stommionPointY - cam_cy);
   //tvec = np.array([tx, ty, tz])
   // cout << "position: (" << tx << ", " << ty << ", " << tz << ")" << endl;
 
