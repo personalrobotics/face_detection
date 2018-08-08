@@ -53,10 +53,6 @@ std::vector<cv::Point2d> imagePoints;
 cv::Mat rotationVector;
 cv::Mat translationVector;
 
-//cv_image<bgr_pixel> cimgSmall;
-//cv_image<bgr_pixel> cimg;
-
-
 int flags;
 bool mouthOpen; // store status of mouth being open or closed
 cv::Mat im; // matrix to store the image
@@ -115,7 +111,7 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
-  imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+  //imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
   imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
   imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
   imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
@@ -126,10 +122,7 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(17).x(), d.part(17).y() ) ); // Outer Eyebrow Tip Right
   imagePoints.push_back( cv::Point2d( d.part(26).x(), d.part(26).y() ) ); // Outer Eyebrow Tip Left
   imagePoints.push_back( cv::Point2d( d.part(21).x(), d.part(21).y() ) ); // Inner Eyebrow Tip Right
-  imagePoints.push_back( cv::Point2d( d.part(22).x(), d.part(22).y() ) ); // Inner Eyebrow Tip Left
-
- // for(int i=0;i<features.size();i++)
-  //   imagePoints.push_back( cv::Point2d( d.part(i).x(),d.part(i).y()  ) );
+  imagePoints.push_back( cv::Point2d( d.part(22).x(), d.part(22).y() ) ); // Inner Eyebrow Tip Left */
 
   return imagePoints;
 
@@ -141,22 +134,12 @@ void method()
     if((depthCallbackBool && imgCallbackBool))
     {
 
-       abscissae.clear();
-       ordinates.clear();
-       WorldFrameApplicates.clear();
-       WorldFrameOrdinates.clear();
-       WorldFrameAbscissae.clear();
-       RealWorld3D.clear();
-
-       // Change to dlib's image format. No memory is copied.
-
-       // Create imSmall by resizing image for face detection
+      // Create imSmall by resizing image for face detection
       cv::resize(im, imSmall, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
 
+      // Change to dlib's image format. No memory is copied.
       cv_image<bgr_pixel> cimgSmall(imSmall);
       cv_image<bgr_pixel> cimg(im);
-
-
 
       // from image callback
 
@@ -172,8 +155,6 @@ void method()
 
       // Pose estimation
 
-
-     // cout << "no problem"<<endl;
       // Marker Array begin
       visualization_msgs::MarkerArray marker_arr;
 
@@ -181,6 +162,12 @@ void method()
       std::vector<full_object_detection> shapes;
       for (unsigned long i = 0; i < faces.size(); ++i)
       {
+       abscissae.clear();
+       ordinates.clear();
+       WorldFrameApplicates.clear();
+       WorldFrameOrdinates.clear();
+       WorldFrameAbscissae.clear();
+       RealWorld3D.clear();
        // Since we ran face detection on a resized image,
        // we will scale up coordinates of face rectangle
        rectangle r(
@@ -221,6 +208,7 @@ void method()
   for(int i=0;i<abscissae.size();i++)
   {
   WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
+  cout<<WorldFrameApplicates[i]<<endl;
   }
 
   // Obtain the abscissae and ordinates of the real world co-ordinates in the world frame
@@ -231,16 +219,10 @@ void method()
   WorldFrameOrdinates.push_back((WorldFrameApplicates[j] / cam_fx) * (ordinates[j] - cam_cy));
   }
 
-  //cout << t1x << " " << t1y << endl;
-
   // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
 
   for(int k=0;k<abscissae.size();k++)
   RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
-
-
-  //cout << endl << t1x <<" ," <<t1y <<" ," <<Stommionz << endl <<cv::Point3d(t1x,t1y,Stommionz) << endl ;
-  //cout << RealWorld3D[0] << endl ;
 
 
        modelPoints3D = get3dModelPoints();
@@ -311,12 +293,14 @@ void method()
       // projected to image plane
        cv::line(im, imagePoints[0],StomionPoint2D[0] , cv::Scalar(255,0,0), 2);
 
-/*
+
            std::vector<cv::Point2d> reprojectedPoints;
-           cv::projectPoints(modelPoints, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
+           cv::projectPoints(modelPoints3D, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
+           cout << "reprojectedPoints size: "<< reprojectedPoints.size()<<endl;
            for (auto point : reprojectedPoints) {
-           cv::circle(im, point, 3, cv::Scalar(50, 255, 70, 255), 5);
-         }*/
+           cv::circle(im, point, 1, cv::Scalar(50, 255, 70, 255), 3);
+           //cout<<"x: "<<point.x<<" y: "<<point.y<<endl;
+           }
       }
 
       // publish the marker array
@@ -333,15 +317,10 @@ void method()
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-
-  //imgCallbackBool=false;
   try
   {
       im = cv_bridge::toCvShare(msg, "bgr8")->image;
-
       imgCallbackBool=true;
-
-      // end image callback here
       method();
 
   }
@@ -353,17 +332,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
 
-  //depthCallbackBool=false;
-
   cv_bridge::CvImageConstPtr depth_img_cv;
-  // Get the ROS image to openCV
-  depth_img_cv = cv_bridge::toCvShare (depth_img_ros, sensor_msgs::image_encodings::TYPE_16UC1);
-  // Convert the uints to floats
-  depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);
-  //cout << "depth: " << depth_mat.at<float>(stommionPointx, stommionPointy) << endl;
+  depth_img_cv = cv_bridge::toCvShare (depth_img_ros, sensor_msgs::image_encodings::TYPE_16UC1); // Get the ROS image to openCV
+  depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);  // Convert the uints to floats
   depthCallbackBool=true;
-  // end depth callback here
-  //method();
 
 }
 
@@ -401,8 +373,6 @@ int main(int argc, char **argv)
    ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
-
-   //method();
 
    ros::spin();
 
