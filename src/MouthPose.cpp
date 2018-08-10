@@ -47,11 +47,13 @@ std::vector<double>WorldFrameAbscissae;
 std::vector<cv::Point3d> RealWorld3D;
 
 std::vector<cv::Point3d> modelPoints3D;
+std::vector<cv::Point3d> modelPoints3DReal;
 
 std::vector<cv::Point2d> imagePoints;
 
 cv::Mat rotationVector;
 cv::Mat translationVector;
+cv::Mat temp;
 
 int flags;
 bool mouthOpen; // store status of mouth being open or closed
@@ -99,22 +101,18 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
   modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
   modelPoints.push_back(cv::Point3d(-10.0, 0.,-58.0));    // Menton
-  //modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
-  //modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
-  //modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
-  //modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
-
-  modelPoints.push_back(cv::Point3d(-115.0,-77.5,69.0)); //
-  modelPoints.push_back(cv::Point3d(-115.0,77.5,69.0));  //
-
-  const static cv::Point3f P3D_RIGHT_EAR(-100., -77.5,-6.);
-const static cv::Point3f P3D_LEFT_EAR(-100., 77.5,-6.);
+  modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
+  modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
+  modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
+  modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
+  modelPoints.push_back(cv::Point3d(-115.0,-77.5,69.0)); // Right side
+  modelPoints.push_back(cv::Point3d(-115.0,77.5,69.0));  // Left side
 
   return modelPoints;
 
 }
-/*
-std::vector<cv::Point3d> get3dModelPoints()
+
+std::vector<cv::Point3d> get3dRealModelPoints()
 {
   std::vector<cv::Point3d> modelPoints;
 
@@ -125,7 +123,7 @@ std::vector<cv::Point3d> get3dModelPoints()
 
   return modelPoints;
 
-}*/
+}
 
 // 2D landmark points from all landmarks
 std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
@@ -141,22 +139,17 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
   imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
-  //imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
-  //imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
-  //imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
-  //imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
+  imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
+  imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
+  imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
+  imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
+  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Side
+  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );     // Left Side
 
-  //imagePoints.push_back( cv::Point2d( d.part(28).x(), d.part(28).y() ) ); // Nose Point 1
-  //imagePoints.push_back( cv::Point2d( d.part(29).x(), d.part(29).y() ) ); // Nose Point 2
-  //imagePoints.push_back( cv::Point2d( d.part(17).x(), d.part(17).y() ) ); // Outer Eyebrow Tip Right
-  //imagePoints.push_back( cv::Point2d( d.part(26).x(), d.part(26).y() ) ); // Outer Eyebrow Tip Left
-  //imagePoints.push_back( cv::Point2d( d.part(21).x(), d.part(21).y() ) ); // Inner Eyebrow Tip Right
-  //imagePoints.push_back( cv::Point2d( d.part(22).x(), d.part(22).y() ) ); // Inner Eyebrow Tip Left */
 
   return imagePoints;
 
 }
-
 void method()
 {
 
@@ -255,13 +248,18 @@ void method()
 
 
        modelPoints3D = get3dModelPoints();
+       modelPoints3DReal=get3dRealModelPoints();
 
        // calculate rotation and translation vector using solvePnP
 
        cv::Mat R;
 
+       cv::solvePnP(modelPoints3DReal, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
+       temp=translationVector;
        cv::solvePnP(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
        //cv::solvePnPRansac(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector,flags=cv::SOLVEPNP_P3P);
+
+       translationVector=temp;
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
@@ -315,7 +313,7 @@ void method()
       // We use this to draw a line sticking out of the stomion
        std::vector<cv::Point3d> StomionPoint3D;
        std::vector<cv::Point2d> StomionPoint2D;
-       StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
+       StomionPoint3D.push_back(cv::Point3d(50.0,0.0,100.0));
        cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
