@@ -192,9 +192,9 @@ void method()
 
        // Grab the position
 
-       new_marker.pose.position.x =(translationVector.at<double>(0));
-       new_marker.pose.position.y =(translationVector.at<double>(1));
-       new_marker.pose.position.z =(translationVector.at<double>(2));
+       new_marker.pose.position.x =(translationVector.at<double>(0)/1000);
+       new_marker.pose.position.y =(translationVector.at<double>(1)/1000);
+       new_marker.pose.position.z =(translationVector.at<double>(2)/1000);
 
        new_marker.pose.orientation.x = quats.vec()[0];
        new_marker.pose.orientation.y = quats.vec()[1];
@@ -226,7 +226,7 @@ void method()
       // We use this to draw a line sticking out of the stomion
        std::vector<cv::Point3d> StomionPoint3D;
        std::vector<cv::Point2d> StomionPoint2D;
-       StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
+       StomionPoint3D.push_back(cv::Point3d(0,50,100.0));
        cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
