@@ -32,9 +32,19 @@ using namespace sensor_msgs;
 
 // global declarations
 
+bool depthCallbackBool=false;
 bool imgCallbackBool=false;
 
 cv::Mat depth_mat;
+
+std::vector<uint32> abscissae;
+std::vector<uint32> ordinates;
+
+std::vector<double>WorldFrameApplicates;
+std::vector<double>WorldFrameOrdinates;
+std::vector<double>WorldFrameAbscissae;
+
+std::vector<cv::Point3d> RealWorld3D;
 
 std::vector<cv::Point3d> modelPoints3D;
 
@@ -58,6 +68,22 @@ ros::Publisher marker_array_pub;
 cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
 
+// Distance funtion to obtain relative distances/co-ordinates for the 3D model points in the real world
+
+cv::Point3d dist(cv::Point3d Origin ,cv::Point3d Point)
+{
+
+cv::Point3d co_ordinates;
+
+co_ordinates.x=Point.x-Origin.x;
+co_ordinates.y=Point.y-Origin.y;
+co_ordinates.z=Point.z-Origin.z;
+
+return co_ordinates;
+
+}
+
+
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
 
 std::vector<cv::Point3d> get3dModelPoints()
@@ -73,16 +99,33 @@ std::vector<cv::Point3d> get3dModelPoints()
   modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));  // Nose
   modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
   modelPoints.push_back(cv::Point3d(-10.0, 0.,-58.0));    // Menton
-  modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
-  modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
-  modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
-  modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
-  modelPoints.push_back(cv::Point3d(-115.0,-77.5,69.0)); // Right side
-  modelPoints.push_back(cv::Point3d(-115.0,77.5,69.0));  // Left side
+  //modelPoints.push_back(cv::Point3d(-10.0,-3.4,75.0)); // Right Eye Lid
+  //modelPoints.push_back(cv::Point3d(-10.0,3.4,75.0)); // Left Eye Lid
+  //modelPoints.push_back(cv::Point3d(-5.0,-2.5,0.0)); // Right Lip corner
+  //modelPoints.push_back(cv::Point3d(-5.0,2.5,0.0)); // Left Lip corner
+
+  modelPoints.push_back(cv::Point3d(-115.0,-77.5,69.0)); //
+  modelPoints.push_back(cv::Point3d(-115.0,77.5,69.0));  //
+
+  const static cv::Point3f P3D_RIGHT_EAR(-100., -77.5,-6.);
+const static cv::Point3f P3D_LEFT_EAR(-100., 77.5,-6.);
 
   return modelPoints;
 
 }
+/*
+std::vector<cv::Point3d> get3dModelPoints()
+{
+  std::vector<cv::Point3d> modelPoints;
+
+  modelPoints.clear();
+
+  for(int i=0;i<RealWorld3D.size();i++)
+  modelPoints.push_back(cv::Point3d(dist(RealWorld3D[0],RealWorld3D[i]).x, dist(RealWorld3D[0],RealWorld3D[i]).y,dist(RealWorld3D[0],RealWorld3D[i]).z));
+
+  return modelPoints;
+
+}*/
 
 // 2D landmark points from all landmarks
 std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
@@ -98,13 +141,17 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   imagePoints.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
   imagePoints.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
   imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
-  imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
-  imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
-  imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
-  imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
-  imagePoints.push_back( cv::Point2d( d.part(0).x(), d.part(0).y() ) );     // Right Side
-  imagePoints.push_back( cv::Point2d( d.part(16).x(), d.part(16).y() ) );     // Left Side
+  //imagePoints.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
+  //imagePoints.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
+  //imagePoints.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
+  //imagePoints.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
 
+  //imagePoints.push_back( cv::Point2d( d.part(28).x(), d.part(28).y() ) ); // Nose Point 1
+  //imagePoints.push_back( cv::Point2d( d.part(29).x(), d.part(29).y() ) ); // Nose Point 2
+  //imagePoints.push_back( cv::Point2d( d.part(17).x(), d.part(17).y() ) ); // Outer Eyebrow Tip Right
+  //imagePoints.push_back( cv::Point2d( d.part(26).x(), d.part(26).y() ) ); // Outer Eyebrow Tip Left
+  //imagePoints.push_back( cv::Point2d( d.part(21).x(), d.part(21).y() ) ); // Inner Eyebrow Tip Right
+  //imagePoints.push_back( cv::Point2d( d.part(22).x(), d.part(22).y() ) ); // Inner Eyebrow Tip Left */
 
   return imagePoints;
 
@@ -113,7 +160,7 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
 void method()
 {
 
-    if( imgCallbackBool)
+    if((depthCallbackBool && imgCallbackBool))
     {
 
       // Create imSmall by resizing image for face detection
@@ -144,6 +191,12 @@ void method()
       std::vector<full_object_detection> shapes;
       for (unsigned long i = 0; i < faces.size(); ++i)
       {
+       abscissae.clear();
+       ordinates.clear();
+       WorldFrameApplicates.clear();
+       WorldFrameOrdinates.clear();
+       WorldFrameAbscissae.clear();
+       RealWorld3D.clear();
        // Since we ran face detection on a resized image,
        // we will scale up coordinates of face rectangle
        rectangle r(
@@ -164,6 +217,42 @@ void method()
 
        // get 2D landmarks from Dlib's shape object
        std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
+
+       for(int i=0;i<imagePoints.size();i++)
+       {
+       abscissae.push_back(imagePoints[i].x);
+       ordinates.push_back(imagePoints[i].y);
+       }
+
+       // from depth callback
+
+      double cam_fx = cameraMatrix.at<double>(0, 0);
+      double cam_fy = cameraMatrix.at<double>(1, 1);
+      double cam_cx = cameraMatrix.at<double>(0, 2);
+      double cam_cy = cameraMatrix.at<double>(1, 2);
+
+  // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
+
+
+  for(int i=0;i<abscissae.size();i++)
+  {
+  WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
+  cout<<WorldFrameApplicates[i]<<endl;
+  }
+
+  // Obtain the abscissae and ordinates of the real world co-ordinates in the world frame
+
+  for(int j=0;j<abscissae.size();j++)
+  {
+  WorldFrameAbscissae.push_back((WorldFrameApplicates[j] / cam_fx) * (abscissae[j] - cam_cx));
+  WorldFrameOrdinates.push_back((WorldFrameApplicates[j] / cam_fx) * (ordinates[j] - cam_cy));
+  }
+
+  // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
+
+  for(int k=0;k<abscissae.size();k++)
+  RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
+
 
        modelPoints3D = get3dModelPoints();
 
@@ -192,9 +281,9 @@ void method()
 
        // Grab the position
 
-       new_marker.pose.position.x =(translationVector.at<double>(0)/1000);
-       new_marker.pose.position.y =(translationVector.at<double>(1)/1000);
-       new_marker.pose.position.z =(translationVector.at<double>(2)/1000);
+       new_marker.pose.position.x =(translationVector.at<double>(0));
+       new_marker.pose.position.y =(translationVector.at<double>(1));
+       new_marker.pose.position.z =(translationVector.at<double>(2));
 
        new_marker.pose.orientation.x = quats.vec()[0];
        new_marker.pose.orientation.y = quats.vec()[1];
@@ -226,7 +315,7 @@ void method()
       // We use this to draw a line sticking out of the stomion
        std::vector<cv::Point3d> StomionPoint3D;
        std::vector<cv::Point2d> StomionPoint2D;
-       StomionPoint3D.push_back(cv::Point3d(0,50,100.0));
+       StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
        cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
@@ -270,6 +359,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   }
 }
 
+void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
+
+  cv_bridge::CvImageConstPtr depth_img_cv;
+  depth_img_cv = cv_bridge::toCvShare (depth_img_ros, sensor_msgs::image_encodings::TYPE_16UC1); // Get the ROS image to openCV
+  depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);  // Convert the uints to floats
+  depthCallbackBool=true;
+
+}
 
 void cameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
    {
@@ -302,6 +399,7 @@ int main(int argc, char **argv)
    std::string MarkerTopic = "/camera/color/image_raw";
    deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
+   ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
