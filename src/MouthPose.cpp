@@ -35,6 +35,8 @@ using namespace sensor_msgs;
 bool depthCallbackBool=false;
 bool imgCallbackBool=false;
 
+bool recieved=false;
+
 cv::Mat depth_mat;
 
 std::vector<uint32> abscissae;
@@ -66,6 +68,7 @@ frontal_face_detector detector = get_frontal_face_detector(); // get the frontal
 shape_predictor predictor;
 
 ros::Publisher marker_array_pub;
+visualization_msgs::MarkerArray store_marker;
 
 cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
@@ -224,27 +227,27 @@ void method()
       double cam_cx = cameraMatrix.at<double>(0, 2);
       double cam_cy = cameraMatrix.at<double>(1, 2);
 
-  // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
+      // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
 
 
-  for(int i=0;i<abscissae.size();i++)
-  {
-  WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
-  cout<<WorldFrameApplicates[i]<<endl;
-  }
+      for(int i=0;i<abscissae.size();i++)
+      {
+      WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
+      cout<<WorldFrameApplicates[i]<<endl;
+      }
 
-  // Obtain the abscissae and ordinates of the real world co-ordinates in the world frame
+      // Obtain the abscissae and ordinates of the real world co-ordinates in the world frame
 
-  for(int j=0;j<abscissae.size();j++)
-  {
-  WorldFrameAbscissae.push_back((WorldFrameApplicates[j] / cam_fx) * (abscissae[j] - cam_cx));
-  WorldFrameOrdinates.push_back((WorldFrameApplicates[j] / cam_fx) * (ordinates[j] - cam_cy));
-  }
+      for(int j=0;j<abscissae.size();j++)
+      {
+      WorldFrameAbscissae.push_back((WorldFrameApplicates[j] / cam_fx) * (abscissae[j] - cam_cx));
+      WorldFrameOrdinates.push_back((WorldFrameApplicates[j] / cam_fx) * (ordinates[j] - cam_cy));
+      }
 
-  // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
+      // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
 
-  for(int k=0;k<abscissae.size();k++)
-  RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
+      for(int k=0;k<abscissae.size();k++)
+      RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
 
 
        modelPoints3D = get3dModelPoints();
@@ -328,10 +331,18 @@ void method()
            cv::circle(im, point, 1, cv::Scalar(50, 255, 70, 255), 3);
            //cout<<"x: "<<point.x<<" y: "<<point.y<<endl;
            }
+
+           store_marker=marker_arr;
+           recieved=true;
       }
 
       // publish the marker array
+      if(recieved){
       marker_array_pub.publish(marker_arr);
+      recieved=false;
+      }
+      else
+      marker_array_pub.publish(store_marker);
 
       // Resize image for display
       imDisplay = im;
