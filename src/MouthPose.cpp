@@ -222,32 +222,32 @@ void method()
 
        // from depth callback
 
-      double cam_fx = cameraMatrix.at<double>(0, 0);
-      double cam_fy = cameraMatrix.at<double>(1, 1);
-      double cam_cx = cameraMatrix.at<double>(0, 2);
-      double cam_cy = cameraMatrix.at<double>(1, 2);
+       double cam_fx = cameraMatrix.at<double>(0, 0);
+       double cam_fy = cameraMatrix.at<double>(1, 1);
+       double cam_cx = cameraMatrix.at<double>(0, 2);
+       double cam_cy = cameraMatrix.at<double>(1, 2);
 
-      // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
+       // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
 
 
-      for(int i=0;i<abscissae.size();i++)
-      {
-      WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
-      cout<<WorldFrameApplicates[i]<<endl;
-      }
+       for(int i=0;i<abscissae.size();i++)
+       {
+       WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
+       cout<<WorldFrameApplicates[i]<<endl;
+       }
 
-      // Obtain the abscissae and ordinates of the real world co-ordinates in the world frame
+       // Obtain the abscissae and ordinates of the real world co-ordinates in the world frame
 
-      for(int j=0;j<abscissae.size();j++)
-      {
-      WorldFrameAbscissae.push_back((WorldFrameApplicates[j] / cam_fx) * (abscissae[j] - cam_cx));
-      WorldFrameOrdinates.push_back((WorldFrameApplicates[j] / cam_fx) * (ordinates[j] - cam_cy));
-      }
+       for(int j=0;j<abscissae.size();j++)
+       {
+       WorldFrameAbscissae.push_back((WorldFrameApplicates[j] / cam_fx) * (abscissae[j] - cam_cx));
+       WorldFrameOrdinates.push_back((WorldFrameApplicates[j] / cam_fx) * (ordinates[j] - cam_cy));
+       }
 
-      // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
+       // store the abscissae, ordinates and applicates of the real world co-ordinates in the world frame
 
-      for(int k=0;k<abscissae.size();k++)
-      RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
+       for(int k=0;k<abscissae.size();k++)
+       RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
 
 
        modelPoints3D = get3dModelPoints();
