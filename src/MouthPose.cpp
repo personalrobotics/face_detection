@@ -52,9 +52,14 @@ std::vector<cv::Point3d> modelPoints3D;
 std::vector<cv::Point3d> modelPoints3DReal;
 
 std::vector<cv::Point2d> imagePoints;
+std::vector<cv::Point2d> imagePoints1;
 
 cv::Mat rotationVector;
 cv::Mat translationVector;
+
+cv::Mat rotationVector1;
+cv::Mat translationVector1;
+
 cv::Mat temp;
 
 int flags;
@@ -153,6 +158,38 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection &d)
   return imagePoints;
 
 }
+
+std::vector<cv::Point2d> get2dImagePoints1(full_object_detection &d)
+{
+
+  imagePoints1.clear();
+  // Stomion Origin
+  //imagePoints.push_back( cv::Point2d( (d.part(62).x()+
+  //d.part(66).x())*0.5, (d.part(62).y()+d.part(66).y())*0.5 ) );             // Stommion
+  imagePoints1.push_back( cv::Point2d( d.part(66).x(),d.part(66).y()  ) );             // Stommion
+  imagePoints1.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );   // Right Eye
+  imagePoints1.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );   // Left Eye
+  imagePoints1.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );   // Nose
+  imagePoints1.push_back( cv::Point2d( d.part(27).x(), d.part(27).y() ) );   // Sellion
+  //imagePoints.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );     // Menton
+  imagePoints1.push_back( cv::Point2d( d.part(38).x(), d.part(38).y() ) );     // Right Eye Lid
+  imagePoints1.push_back( cv::Point2d( d.part(43).x(), d.part(43).y() ) );     // Left Eye Lid
+  imagePoints1.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );     // Right Lip Corner
+  imagePoints1.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );     // Left Lip Corner
+
+  imagePoints1.push_back( cv::Point2d( d.part(28).x(), d.part(28).y() ) ); // Nose Point 1
+  imagePoints1.push_back( cv::Point2d( d.part(29).x(), d.part(29).y() ) ); // Nose Point 2
+  imagePoints1.push_back( cv::Point2d( d.part(17).x(), d.part(17).y() ) ); // Outer Eyebrow Tip Right
+  imagePoints1.push_back( cv::Point2d( d.part(26).x(), d.part(26).y() ) ); // Outer Eyebrow Tip Left
+  imagePoints1.push_back( cv::Point2d( d.part(21).x(), d.part(21).y() ) ); // Inner Eyebrow Tip Right
+  imagePoints1.push_back( cv::Point2d( d.part(22).x(), d.part(22).y() ) ); // Inner Eyebrow Tip Left */
+
+
+  return imagePoints1;
+
+}
+
+
 void method()
 {
 
@@ -213,11 +250,12 @@ void method()
 
        // get 2D landmarks from Dlib's shape object
        std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
+       std::vector<cv::Point2d> imagePoints1 = get2dImagePoints1(shape);
 
-       for(int i=0;i<imagePoints.size();i++)
+       for(int i=0;i<imagePoints1.size();i++)
        {
-       abscissae.push_back(imagePoints[i].x);
-       ordinates.push_back(imagePoints[i].y);
+       abscissae.push_back(imagePoints1[i].x);
+       ordinates.push_back(imagePoints1[i].y);
        }
 
        // from depth callback
@@ -257,17 +295,14 @@ void method()
 
        cv::Mat R;
 
-       cv::solvePnP(modelPoints3DReal, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
-       temp=translationVector;
-       cv::solvePnP(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
+       cv::solvePnP(modelPoints3DReal, imagePoints1, cameraMatrix, distCoeffs, rotationVector,translationVector, cv::SOLVEPNP_ITERATIVE);
+       cv::solvePnP(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector1,translationVector1, cv::SOLVEPNP_ITERATIVE);
        //cv::solvePnPRansac(modelPoints3D, imagePoints, cameraMatrix, distCoeffs, rotationVector, translationVector,flags=cv::SOLVEPNP_P3P);
-
-       translationVector=temp;
 
        Eigen::Vector3d Translate;
        Eigen::Quaterniond quats;
 
-       cv::Rodrigues(rotationVector,R);
+       cv::Rodrigues(rotationVector1,R);
 
        Eigen::Matrix3d mat;
        cv::cv2eigen(R, mat);
@@ -312,12 +347,12 @@ void method()
 
       marker_arr.markers.push_back(new_marker);
 
-      // Project a 3D point (0, 0, 10.0) onto the image plane.
-      // We use this to draw a line sticking out of the stomion
+      // Project a 3D point (50.0, 0.0, 100.0) onto the image plane.
+      // We use this to draw a line sticking out of the stommion
        std::vector<cv::Point3d> StomionPoint3D;
        std::vector<cv::Point2d> StomionPoint2D;
        StomionPoint3D.push_back(cv::Point3d(50.0,0.0,100.0));
-       cv::projectPoints(StomionPoint3D, rotationVector, translationVector, cameraMatrix, distCoeffs, StomionPoint2D);
+       cv::projectPoints(StomionPoint3D, rotationVector1, translationVector1, cameraMatrix, distCoeffs, StomionPoint2D);
 
       // draw line between stomion points in image and 3D stomion points
       // projected to image plane
@@ -325,7 +360,8 @@ void method()
 
 
            std::vector<cv::Point2d> reprojectedPoints;
-           cv::projectPoints(modelPoints3D, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
+           cv::projectPoints(modelPoints3D, rotationVector1, translationVector1, cameraMatrix, distCoeffs, reprojectedPoints);
+           //cv::projectPoints(modelPoints3DReal, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
            cout << "reprojectedPoints size: "<< reprojectedPoints.size()<<endl;
            for (auto point : reprojectedPoints) {
            cv::circle(im, point, 1, cv::Scalar(50, 255, 70, 255), 3);
@@ -336,7 +372,7 @@ void method()
            recieved=true;
       }
 
-      // publish the marker array
+      // publish the marker array and retain previous value if no face is detected
       if(recieved){
       marker_array_pub.publish(marker_arr);
       recieved=false;
