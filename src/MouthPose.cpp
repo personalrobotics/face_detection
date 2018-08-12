@@ -34,7 +34,6 @@ using namespace sensor_msgs;
 
 bool depthCallbackBool=false;
 bool imgCallbackBool=false;
-
 bool recieved=false;
 
 cv::Mat depth_mat;
@@ -303,12 +302,9 @@ void method()
        Eigen::Quaterniond quats;
 
        cv::Rodrigues(rotationVector1,R);
-
        Eigen::Matrix3d mat;
        cv::cv2eigen(R, mat);
-
        Eigen::Quaterniond EigenQuat(mat);
-
        quats = EigenQuat;
 
 
@@ -359,17 +355,16 @@ void method()
        cv::line(im, imagePoints[0],StomionPoint2D[0] , cv::Scalar(255,0,0), 2);
 
 
-           std::vector<cv::Point2d> reprojectedPoints;
-           cv::projectPoints(modelPoints3D, rotationVector1, translationVector1, cameraMatrix, distCoeffs, reprojectedPoints);
-           //cv::projectPoints(modelPoints3DReal, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
-           cout << "reprojectedPoints size: "<< reprojectedPoints.size()<<endl;
-           for (auto point : reprojectedPoints) {
+       std::vector<cv::Point2d> reprojectedPoints;
+       cv::projectPoints(modelPoints3D, rotationVector1, translationVector1, cameraMatrix, distCoeffs, reprojectedPoints);
+       //cv::projectPoints(modelPoints3DReal, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
+       cout << "reprojectedPoints size: "<< reprojectedPoints.size()<<endl;
+       for (auto point : reprojectedPoints) {
            cv::circle(im, point, 1, cv::Scalar(50, 255, 70, 255), 3);
-           //cout<<"x: "<<point.x<<" y: "<<point.y<<endl;
            }
 
-           store_marker=marker_arr;
-           recieved=true;
+       store_marker=marker_arr;
+       recieved=true;
       }
 
       // publish the marker array and retain previous value if no face is detected
