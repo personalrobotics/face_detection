@@ -313,9 +313,9 @@ void method()
 
        // Grab the position
 
-       new_marker.pose.position.x =(translationVector.at<double>(0));
-       new_marker.pose.position.y =(translationVector.at<double>(1));
-       new_marker.pose.position.z =(translationVector.at<double>(2));
+       new_marker.pose.position.x =(translationVector.at<double>(0)) / -1000.0;
+       new_marker.pose.position.y =(translationVector.at<double>(1)) / -1000.0;
+       new_marker.pose.position.z =(translationVector.at<double>(2)) / -1000.0;
 
        new_marker.pose.orientation.x = quats.vec()[0];
        new_marker.pose.orientation.y = quats.vec()[1];
@@ -437,10 +437,10 @@ int main(int argc, char **argv)
    image_transport::ImageTransport it(nh);
 
    std::string MarkerTopic = "/camera/color/image_raw";
-   deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
+   deserialize("/home/herb/Workspace/ada_ws/src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
    ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
-   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+   image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
