@@ -313,14 +313,28 @@ void method()
 
        // Grab the position
 
-       new_marker.pose.position.x =(translationVector.at<double>(0)) / -1000.0;
-       new_marker.pose.position.y =(translationVector.at<double>(1)) / -1000.0;
-       new_marker.pose.position.z =(translationVector.at<double>(2)) / -1000.0;
+       new_marker.pose.position.x =(translationVector.at<double>(0));
+       new_marker.pose.position.y =(translationVector.at<double>(1));
+       new_marker.pose.position.z =(translationVector.at<double>(2));
 
        new_marker.pose.orientation.x = quats.vec()[0];
        new_marker.pose.orientation.y = quats.vec()[1];
        new_marker.pose.orientation.z = quats.vec()[2];
        new_marker.pose.orientation.w = quats.w();
+
+       new_marker.scale.x = 0.1;
+       new_marker.scale.y = 0.05;
+       new_marker.scale.z = 0.05;
+
+       new_marker.type = visualization_msgs::Marker::CUBE;
+       new_marker.action = visualization_msgs::Marker::ADD;
+       new_marker.id = 78234;
+       new_marker.header.stamp = ros::Time();
+       new_marker.color.a = 1.0;
+       new_marker.color.r = 0.0;
+       new_marker.color.g = 1.0;
+       new_marker.color.b = 0.0;
+
 
        // mouth status display
         mouthOpen = checkMouth(shape);
