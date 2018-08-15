@@ -238,6 +238,16 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
       // publish the marker array
       // marker_array_pub.publish(marker_arr);
 
+      // not working depth visualization
+      // for (int x=0; x<im.cols; x++) {
+      //   for (int y=0; y<im.rows; y++) {
+      //     if (depth_mat.at<float>(y,x) < 0.001) {
+      //       cv::circle(im, cv::Point2d(x,y), 1, cv::Scalar(50, 255, 70, 255), 1);
+      //     } else if (depth_mat.at<float>(y,x) > 100) {
+      //       cv::circle(im, cv::Point2d(x,y), 1, cv::Scalar(255, 50, 70, 255), 1);
+      //     }
+      //   }
+      // }
       // Resize image for display
       imDisplay = im;
       cv::resize(im, imDisplay, cv::Size(), 1, 1);
@@ -314,7 +324,7 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
 
   for (int x=std::max(0, (int)betweenEyesPointX-4); x<std::min(depth_mat.cols, (int)betweenEyesPointX+5); x++) {
     for (int y=std::max(0, (int)betweenEyesPointY-4); y<std::min(depth_mat.rows, (int)betweenEyesPointY+5); y++) {
-      float depth = depth_mat.at<float>(x, y);
+      float depth = depth_mat.at<float>(y, x);
       if (depth > 0.0001) {
         averageDepth += depth;
         depthCounts++;
