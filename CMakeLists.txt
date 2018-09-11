@@ -29,6 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
   image_transport
+  compressed_depth_image_transport
   image_geometry
 )
 
@@ -45,7 +46,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES face_detection
-  CATKIN_DEPENDS roscpp sensor_msgs std_msgs cv_bridge image_transport tf
+  CATKIN_DEPENDS roscpp sensor_msgs std_msgs cv_bridge image_transport tf compressed_depth_image_transport
   #DEPENDS eigen
 )
 
@@ -92,6 +93,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
     dlib
 )
+message(${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

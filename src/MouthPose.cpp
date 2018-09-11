@@ -6,6 +6,8 @@
 #include <dlib/gui_widgets.h>
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
+#include <compressed_depth_image_transport/codec.h>
+#include <compressed_depth_image_transport/compression_common.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 #include <opencv2/core/core.hpp>
@@ -55,6 +57,9 @@ cv::Mat_<double> cameraMatrix(3,3);
 double oldX, oldY, oldZ;
 bool firstTimeDepth = true;
 bool firstTimeImage = true;
+
+
+std::chrono::time_point<std::chrono::system_clock> lastDepthTime = std::chrono::system_clock::now();
 
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
 std::vector<cv::Point3d> get3dModelPoints()
@@ -294,13 +299,120 @@ void publishMarker(float tx, float ty, float tz) {
   marker_array_pub.publish(marker_arr);marker_array_pub.publish(marker_arr);
 }
 
+sensor_msgs::Image::Ptr decodeCompressedDepthImage(const sensor_msgs::CompressedImage& message)
+ {
+ 
+   cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
+ 
+   // Copy message header
+   cv_ptr->header = message.header;
+ 
+   // Assign image encoding
+   std::string image_encoding = message.format.substr(0, message.format.find(';'));
+   cv_ptr->encoding = image_encoding;
+ 
+   // Decode message data
+   if (message.data.size() > sizeof(compressed_depth_image_transport::ConfigHeader))
+   {
+ 
+     // Read compression type from stream
+     compressed_depth_image_transport::ConfigHeader compressionConfig;
+     memcpy(&compressionConfig, &message.data[0], sizeof(compressionConfig));
+ 
+     // Get compressed image data
+     const std::vector<uint8_t> imageData(message.data.begin() + sizeof(compressionConfig), message.data.end());
+ 
+     // Depth map decoding
+     float depthQuantA, depthQuantB;
+ 
+     // Read quantization parameters
+     depthQuantA = compressionConfig.depthParam[0];
+     depthQuantB = compressionConfig.depthParam[1];
+ 
+     if (sensor_msgs::image_encodings::bitDepth(image_encoding) == 32)
+     {
+       cv::Mat decompressed;
+       try
+       {
+         // Decode image data
+         decompressed = cv::imdecode(imageData, cv::IMREAD_UNCHANGED);
+       }
+       catch (cv::Exception& e)
+       {
+         ROS_ERROR("%s", e.what());
+         return sensor_msgs::Image::Ptr();
+       }
+ 
+       size_t rows = decompressed.rows;
+       size_t cols = decompressed.cols;
+ 
+       if ((rows > 0) && (cols > 0))
+       {
+         cv_ptr->image = cv::Mat(rows, cols, CV_32FC1);
+ 
+         // Depth conversion
+         cv::MatIterator_<float> itDepthImg = cv_ptr->image.begin<float>(),
+                             itDepthImg_end = cv_ptr->image.end<float>();
+         cv::MatConstIterator_<unsigned short> itInvDepthImg = decompressed.begin<unsigned short>(),
+                                           itInvDepthImg_end = decompressed.end<unsigned short>();
+ 
+         for (; (itDepthImg != itDepthImg_end) && (itInvDepthImg != itInvDepthImg_end); ++itDepthImg, ++itInvDepthImg)
+         {
+           // check for NaN & max depth
+           if (*itInvDepthImg)
+           {
+             *itDepthImg = depthQuantA / ((float)*itInvDepthImg - depthQuantB);
+           }
+           else
+           {
+             *itDepthImg = std::numeric_limits<float>::quiet_NaN();
+           }
+         }
+ 
+         // Publish message to user callback
+         return cv_ptr->toImageMsg();
+       }
+     }
+     else
+     {
+       // Decode raw image
+       try
+       {
+         cv_ptr->image = cv::imdecode(imageData, CV_LOAD_IMAGE_UNCHANGED);
+       }
+       catch (cv::Exception& e)
+       {
+         ROS_ERROR("%s", e.what());
+         return sensor_msgs::Image::Ptr();
+       }
+ 
+       size_t rows = cv_ptr->image.rows;
+       size_t cols = cv_ptr->image.cols;
+ 
+       if ((rows > 0) && (cols > 0))
+       {
+         // Publish message to user callback
+         return cv_ptr->toImageMsg();
+       }
+     }
+   }
+   return sensor_msgs::Image::Ptr();
+ }
+
 void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros){
+  float seconds = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::system_clock::now() - lastDepthTime).count();
+  lastDepthTime = std::chrono::system_clock::now();
+  std::cout << "time between depth callbacks: " << seconds << std::endl;
+
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) { facePerceptionOn = true; }
   if (!facePerceptionOn) {
     cv::destroyAllWindows();
     return;
   }
+
+  // auto depth_img_ros = compressed_depth_image_transport::decodeCompressedDepthImage(*depth_img_ros_compressed);
+  // auto depth_img_ros = decodeCompressedDepthImage(*depth_img_ros_compressed);
 
   cv_bridge::CvImageConstPtr depth_img_cv;
   cv::Mat depth_mat;
@@ -421,6 +533,9 @@ int main(int argc, char **argv)
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
   //  image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
    ros::Subscriber sub_depth = nh->subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
+  //  ros::Subscriber sub_depth = nh->subscribe("/camera/depth/image_rect_raw", 1, DepthCallBack);
+
+  //  compressed_depth_image_transport::CompressedDepthSubscriber sub_depth = it.subscribe("/camera/depth/image_rect_raw", 1, DepthCallBack, image_transport::TransportHints("compressed"));
    marker_array_pub = nh->advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
    ros::spin();
