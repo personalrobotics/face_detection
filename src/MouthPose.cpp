@@ -302,6 +302,7 @@ void method()
        Eigen::Quaterniond quats;
 
        cv::Rodrigues(rotationVector1,R);
+       //R=R*R_z;
        Eigen::Matrix3d mat;
        cv::cv2eigen(R, mat);
        Eigen::Quaterniond EigenQuat(mat);
@@ -322,18 +323,19 @@ void method()
        new_marker.pose.orientation.z = quats.vec()[2];
        new_marker.pose.orientation.w = quats.w();
 
-       new_marker.scale.x = 0.1;
-       new_marker.scale.y = 0.05;
-       new_marker.scale.z = 0.05;
+       new_marker.scale.x = 1;
+       new_marker.scale.y = 1;
+       new_marker.scale.z = 1;
 
-       new_marker.type = visualization_msgs::Marker::CUBE;
+       new_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
        new_marker.action = visualization_msgs::Marker::ADD;
        new_marker.id = 78234;
        new_marker.header.stamp = ros::Time();
        new_marker.color.a = 1.0;
-       new_marker.color.r = 0.0;
+       new_marker.color.r = 1.0;
        new_marker.color.g = 1.0;
-       new_marker.color.b = 0.0;
+       new_marker.color.b = 1.0;
+       new_marker.mesh_resource = "package://pr_ordata/data/objects/tom.dae";
 
 
        // mouth status display
@@ -451,7 +453,7 @@ int main(int argc, char **argv)
    image_transport::ImageTransport it(nh);
 
    std::string MarkerTopic = "/camera/color/image_raw";
-   deserialize("/home/herb/Workspace/ada_ws/src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
+   deserialize("../../../src/face_detection/model/shape_predictor_68_face_landmarks.dat") >> predictor;
    ros::Subscriber sub_info = nh.subscribe("/camera/color/camera_info", 1, cameraInfo);
    ros::Subscriber sub_depth = nh.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack );
    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback, image_transport::TransportHints("compressed"));
