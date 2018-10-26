@@ -33,6 +33,7 @@ using namespace sensor_msgs;
 
 // global declarations
 uint32 stommionPointX, stommionPointY;
+Eigen::Quaterniond quats;
 uint32 betweenEyesPointX, betweenEyesPointY;
 int indexStommion, indexLeftEyeLid, indexRightEyeLid;
 cv::Mat rotationVector;
@@ -208,7 +209,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
                    rotationVector, translationVector);
 
       Eigen::Vector3d Translate;
-      Eigen::Quaterniond quats;
+      
 
       cv::Rodrigues(rotationVector, R);
 
@@ -282,6 +283,21 @@ void publishMarker(float tx, float ty, float tz) {
   new_marker.pose.orientation.z = 0;
   new_marker.pose.orientation.w = 0.707;
 
+  // Additional Visualization
+  new_marker.scale.x = 1;
+  new_marker.scale.y = 1;
+  new_marker.scale.z = 1;
+
+  new_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+  new_marker.mesh_resource = "package://pr_ordata/data/objects/tom.dae";
+  new_marker.action = visualization_msgs::Marker::ADD;
+  new_marker.id = 78234;
+  new_marker.header.stamp = ros::Time();
+  new_marker.color.a = 1.0;
+  new_marker.color.r = 0.5;
+  new_marker.color.g = 0.5;
+  new_marker.color.b = 0.5;
+
   // mouth status display
   if (mouthOpen == true) {
     cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
@@ -324,7 +340,8 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros) {
   depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);
   // cout << (float)(depth_img_cv[stommionPointY*depth_img_ros->width +
   // stommionPointX]); cout <<
-  // depth_mat[(int)(stommionPointY*depth_img_ros->width + stommionPointX)]; cout
+  // depth_mat[(int)(stommionPointY*depth_img_ros->width + stommionPointX)];
+  // cout
   // << "stommion x: " << stommionPointX << ",  stommion y: " << stommionPointY
   // << endl;
 
