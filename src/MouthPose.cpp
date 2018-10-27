@@ -303,12 +303,30 @@ void method()
        Eigen::Quaterniond quats;
 
        cv::Rodrigues(rotationVector1,R);
-       //R=R*R_z;
+
+       Eigen::AngleAxisd rollAngle(3.14159, Eigen::Vector3d::UnitZ());
+       Eigen::AngleAxisd yawAngle(0, Eigen::Vector3d::UnitY());
+       Eigen::AngleAxisd pitchAngle(0, Eigen::Vector3d::UnitX());
+       Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
+       Eigen::Matrix3d zRot = q.matrix();
+
+
        Eigen::Matrix3d mat;
        cv::cv2eigen(R, mat);
+       mat=zRot*mat;
+
+
        Eigen::Quaterniond EigenQuat(mat);
        quats = EigenQuat;
 
+       Eigen::Vector3d forwardZ(0, 0, 1);
+
+       // accounting for apparent rotation
+       Eigen::Vector3d cameraTranslation;
+       cv::cv2eigen(translationVector, cameraTranslation);
+       // cout << translationVector << "  " << cameraTranslation;
+       Eigen::Quaterniond cameraRot = Eigen::Quaterniond().setFromTwoVectors(forwardZ, cameraTranslation);
+       quats = cameraRot * quats;
 
        // fill up a Marker
        visualization_msgs::Marker new_marker;
