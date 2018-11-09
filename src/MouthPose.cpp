@@ -105,6 +105,16 @@ std::vector<cv::Point2d> get2dImagePoints(full_object_detection& d) {
   return imagePoints;
 }
 
+static cv::Rect dlibRectangleToOpenCV(rectangle r)
+{
+  return cv::Rect(cv::Point2i(r.left(), r.top()), cv::Point2i(r.right() + 1, r.bottom() + 1));
+}
+
+static rectangle openCVRectToDlib(cv::Rect r)
+{
+  return dlib::rectangle((long)r.tl().x, (long)r.tl().y, (long)r.br().x - 1, (long)r.br().y - 1);
+}
+
 void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) {
@@ -127,6 +137,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     cv_image<bgr_pixel> cimgSmall(imSmall);
     cv_image<bgr_pixel> cimg(im);
 
+    float rotAngle = 0.0f;
+
     // Process frames at an interval of SKIP_FRAMES.
     // This value should be set depending on your system hardware
     // and camera fps.
@@ -134,13 +146,34 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     if (counter % SKIP_FRAMES == 0) {
       // Detect faces
       faces = detector(cimgSmall);
+
+      if (faces.size() == 0) {
+        //cout << "[Rotation] No faces detected, attempting rotations." << endl;
+        cv::Mat imRot;
+        cv::Point2f center(imSmall.cols/2.0, imSmall.rows/2.0);
+        static float angles[2] = {-55.0f, 55.0f};
+        for(int i = 0; i < 2; i++) {
+          //cout << "[Rotation] Rotating by (degrees): " << angles[i] << endl;
+          cv::Mat rot = cv::getRotationMatrix2D(center, angles[i], 1.0);
+          cv::warpAffine(imSmall, imRot, rot, imSmall.size());
+          cv_image<bgr_pixel> cimgRot(imRot);
+          faces = detector(cimgRot);
+          if(faces.size() > 0) {
+            // Detected a face! Rotate bounding rectangle back
+            //cout << "[Rotation] Detected face at (degrees): " << angles[i] << endl;
+            rotAngle = angles[i];
+            break; // No need to rotate other direction
+          }
+        }
+      }
     }
 
     // Pose estimation
     std::vector<cv::Point3d> modelPoints = get3dModelPoints();
 
     // Iterate over faces
-    std::vector<full_object_detection> shapes;
+    //cout << "Detected Faces: " << faces.size() << endl;
+    //cout << "Final rotation: " << rotAngle << endl;
     for (unsigned long i = 0; i < faces.size(); ++i) {
       // Since we ran face detection on a resized image,
       // we will scale up coordinates of face rectangle
@@ -149,15 +182,28 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
                   (long)(faces[i].right() * FACE_DOWNSAMPLE_RATIO),
                   (long)(faces[i].bottom() * FACE_DOWNSAMPLE_RATIO));
 
-      // Find face landmarks by providing reactangle for each face
-      full_object_detection shape = predictor(cimg, r);
-      shapes.push_back(shape);
+      // rotate big image pre-detection
+      cv::Mat imRot;
+      cv::Point2f center(im.cols/2.0, im.rows/2.0);
+      cv::Mat rot = cv::getRotationMatrix2D(center, rotAngle, 1.0);
+      cv::warpAffine(im, imRot, rot, im.size());
+      cv_image<bgr_pixel> cimgRot(imRot);
 
-      // Draw landmarks over face
-      renderFace(im, shape);
+      // Find face landmarks by providing reactangle for each face
+      full_object_detection shape = predictor(cimgRot, r);
 
       // get 2D landmarks from Dlib's shape object
       std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
+
+      // Rotate image points back
+      rot = cv::getRotationMatrix2D(center, -rotAngle, 1.0);
+      cv::transform(imagePoints, imagePoints, rot);
+
+      // Draw landmarks over face
+      //renderFace(im, shape);
+      renderFace(im, imagePoints, cv::Scalar(255, 200, 0));
+      cv::rectangle(im, dlibRectangleToOpenCV(r), cv::Scalar(0, 255, 0));
+
       stommionPointX = imagePoints[0].x;
       stommionPointY = imagePoints[0].y;
       betweenEyesPointX =
@@ -177,7 +223,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
       Eigen::Vector3d Translate;
 
-
       cv::Rodrigues(rotationVector, R);
 
       Eigen::AngleAxisd rollAngle(3.14159, Eigen::Vector3d::UnitZ());
@@ -195,28 +240,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
       quats = EigenQuat;
 
+      auto euler = quats.toRotationMatrix().eulerAngles(0, 1, 2);
+      std::cout << "Euler from quaternion in roll, pitch, yaw"<< std::endl << euler << std::endl;
+
       // mouth status display
       mouthOpen = checkMouth(shape);
-
-      // Project a 3D point (0, 0, 100.0) onto the image plane.
-      // We use this to draw a line sticking out of the stomion
-      // std::vector<cv::Point3d> StomionPoint3D;
-      // std::vector<cv::Point2d> StomionPoint2D;
-      // StomionPoint3D.push_back(cv::Point3d(0,0,100.0));
-      // cv::projectPoints(StomionPoint3D, rotationVector, translationVector,
-      // cameraMatrix, distCoeffs, StomionPoint2D);
-
-      // draw line between stomion points in image and 3D stomion points
-      // projected to image plane
-      // cv::line(im,StomionPoint2D[0], imagePoints[0] , cv::Scalar(255,0,0),
-      // 2);
-
-      // std::vector<cv::Point2d> reprojectedPoints;
-      // cv::projectPoints(modelPoints, rotationVector, translationVector,
-      // cameraMatrix, distCoeffs, reprojectedPoints); for (auto point :
-      // reprojectedPoints) {
-      //   cv::circle(im, point, 3, cv::Scalar(50, 255, 70, 255), 5);
-      // }
     }
 
     firstTimeImage = false;

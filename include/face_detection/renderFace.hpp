@@ -45,7 +45,7 @@ void renderFace(cv::Mat &img, const dlib::full_object_detection& landmarks)
 void renderFace
 (
   cv::Mat &img, // Image to draw the points on
-  const std::vector<cv::Point2f> &points, // Vector of points
+  const std::vector<cv::Point2d> &points, // Vector of points
   cv::Scalar color, // color points
   int radius = 3) // Radius of points.
 {
