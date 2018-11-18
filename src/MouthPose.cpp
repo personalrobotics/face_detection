@@ -174,6 +174,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     // Iterate over faces
     //cout << "Detected Faces: " << faces.size() << endl;
     //cout << "Final rotation: " << rotAngle << endl;
+
+    if (faces.size() == 0) {
+      // No faces detected
+      stommionPointX = 0;
+      stommionPointY = 0;
+    }
     for (unsigned long i = 0; i < faces.size(); ++i) {
       // Since we ran face detection on a resized image,
       // we will scale up coordinates of face rectangle
@@ -310,8 +316,11 @@ void publishMarker(float tx, float ty, float tz) {
   new_marker.header.frame_id = "/camera_color_optical_frame";
 
   visualization_msgs::MarkerArray marker_arr;
-  marker_arr.markers.push_back(new_marker);
-  marker_array_pub.publish(marker_arr);
+
+  if (tx != 0 || ty != 0 || tz != 0) {
+    marker_arr.markers.push_back(new_marker);
+  } // else no perception
+  
   marker_array_pub.publish(marker_arr);
 }
 
@@ -383,6 +392,12 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros) {
 
   if (firstTimeImage) {
     std::cout << "skipping because image not yet received" << std::endl;
+    return;
+  }
+
+  if (stommionPointX == 0) {
+    std::cout << "No face detected in image callback. Skipping." << std::endl;
+    publishMarker(0, 0, 0);
     return;
   }
 
