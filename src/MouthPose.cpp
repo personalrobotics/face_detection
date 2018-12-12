@@ -22,7 +22,11 @@
 #include <Eigen/Geometry>
 #include <opencv2/core/eigen.hpp>
 #include <mutex>
+#include <cstring>
+#include <opencv2/tracking.hpp>
+#include <iostream>
 
+using namespace cv;
 using namespace dlib;
 using namespace std;
 using namespace sensor_msgs;
@@ -65,11 +69,17 @@ cv::Mat temp;
 int flags;
 bool mouthOpen; // store status of mouth being open or closed
 cv::Mat im; // matrix to store the image
+cv::Mat frame; // matrix to store the image
 int counter=0;
-std::vector<rectangle> faces; // variable to store face rectangles
+
+std::vector<dlib::rectangle> faces; // variable to store face rectangles
+std::vector<dlib::rectangle> faceRects;
+
 cv::Mat imSmall, imDisplay; // matrices to store the resized image to oprate on and display
 // Load face detection and pose estimation models.
-frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
+dlib::frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
+dlib::frontal_face_detector faceDetector = get_frontal_face_detector();
+
 shape_predictor predictor;
 
 ros::Publisher marker_array_pub;
@@ -77,6 +87,41 @@ visualization_msgs::MarkerArray store_marker;
 
 cv::Mat_<double> distCoeffs(5,1);
 cv::Mat_<double> cameraMatrix(3,3);
+
+// List of tracker types in OpenCV 3.2
+// NOTE : GOTURN implementation is buggy and does not work.
+const char *types[] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN"};
+
+
+// easy way to access trackers!
+// create tracker by name
+cv::Ptr<Tracker> createTrackerByName(string trackerType) {
+  cv::Ptr<Tracker> tracker;
+  if (strcmp(trackerType.c_str(), "BOOSTING") == 0) {
+    tracker = cv::TrackerBoosting::create();
+  } else if (strcmp(trackerType.c_str(), "MIL") == 0) {
+    tracker = cv::TrackerMIL::create();
+  } else if (strcmp(trackerType.c_str(), "KCF") == 0) {
+    tracker = cv::TrackerKCF::create();
+  } else if (strcmp(trackerType.c_str(), "TLD") == 0) {
+    tracker = cv::TrackerTLD::create();
+  } else if (strcmp(trackerType.c_str(), "MEDIANFLOW") == 0) {
+    tracker = cv::TrackerMedianFlow::create();
+  } else {
+    cout << "Incorrect tracker name" << endl;
+    cout << "Available trackers are: " << endl;
+    cout << "BOOSTING" << endl;
+    cout << "MIL" << endl;
+    cout << "KCF" << endl;
+    cout << "TLD" << endl;
+    cout << "MEDIANFLOW" << endl;
+  }
+  // GOTURN crashes
+  // else if (strcmp(trackerType.c_str(), "GOTURN") == 0) {
+  //   tracker = TrackerGOTURN::create();
+  // }
+  return tracker;
+}
 
 // Distance funtion to obtain relative distances/co-ordinates for the 3D model points in the real world
 
@@ -189,8 +234,7 @@ std::vector<cv::Point2d> get2dImagePoints1(full_object_detection &d)
 
 }
 
-
-void method()
+void detect_face()
 {
 
     if((depthCallbackBool && imgCallbackBool))
@@ -200,8 +244,9 @@ void method()
       cv::resize(im, imSmall, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
 
       // Change to dlib's image format. No memory is copied.
-      cv_image<bgr_pixel> cimgSmall(imSmall);
-      cv_image<bgr_pixel> cimg(im);
+      dlib::cv_image<bgr_pixel> cimgSmall(imSmall);
+      dlib::cv_image<bgr_pixel> cimg(im);
+      dlib::cv_image<bgr_pixel> dlibIm(im);
 
       // from image callback
 
@@ -212,7 +257,9 @@ void method()
       if ( counter % SKIP_FRAMES == 0 )
       {
         // Detect faces
-        faces = detector(cimgSmall);
+        faces  = detector(cimgSmall);
+
+        std::vector<dlib::rectangle> faceRects = faceDetector(dlibIm);
       }
 
       // Pose estimation
@@ -222,6 +269,9 @@ void method()
 
       // Iterate over faces
       std::vector<full_object_detection> shapes;
+
+      cv::Rect2d box;
+
       for (unsigned long i = 0; i < faces.size(); ++i)
       {
        abscissae.clear();
@@ -232,19 +282,49 @@ void method()
        RealWorld3D.clear();
        // Since we ran face detection on a resized image,
        // we will scale up coordinates of face rectangle
-       rectangle r(
+       dlib::rectangle r(
               (long)(faces[i].left() * FACE_DOWNSAMPLE_RATIO),
               (long)(faces[i].top() * FACE_DOWNSAMPLE_RATIO),
               (long)(faces[i].right() * FACE_DOWNSAMPLE_RATIO),
               (long)(faces[i].bottom() * FACE_DOWNSAMPLE_RATIO)
               );
 
-       // Find face landmarks by providing reactangle for each face
+
+    //dlib::rectangle bbox = faceRects[0];
+    dlib::rectangle bbox = faces[0];
+    // modify the dlib rect to opencv rect
+    box = cv::Rect2d(
+                    (long)bbox.left(),
+                    (long)bbox.top() ,
+                    (long)bbox.width(),
+                    (long)bbox.height()
+                    );
+
+
+       // Find face landmarks by providing rectangle for each face
        full_object_detection shape = predictor(cimg, r);
        shapes.push_back(shape);
 
        // Draw landmarks over face
        renderFace(im, shape);
+
+        // tracking start
+        // Create a tracker
+        std::vector <string> trackerTypes(types, std::end(types));
+        string trackerType = trackerTypes[2];
+        cv::Ptr<Tracker> tracker = createTrackerByName(trackerType);
+
+        // Initialize tracker
+        tracker->init(im, box);
+
+        // Define a few colors for drawing
+        cv::Scalar red(0,0,255);
+        cv::Scalar blue(255,128,0);
+
+        // Display bounding box.
+        cv::rectangle(im, box, blue, 2, 1 );
+        // tracking end
+
 
        //modelPoints3D.clear();
 
@@ -267,7 +347,6 @@ void method()
 
        // Obtain depth values of chosen facial landmark points, these are the applicates in the real world frame
 
-
        for(int i=0;i<abscissae.size();i++)
        {
        WorldFrameApplicates.push_back(depth_mat.at<float>(abscissae[i], ordinates[i]));
@@ -286,7 +365,6 @@ void method()
 
        for(int k=0;k<abscissae.size();k++)
        RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
-
 
        modelPoints3D = get3dModelPoints();
        modelPoints3DReal=get3dRealModelPoints();
@@ -310,11 +388,9 @@ void method()
        Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
        Eigen::Matrix3d zRot = q.matrix();
 
-
        Eigen::Matrix3d mat;
        cv::cv2eigen(R, mat);
        mat=zRot*mat;
-
 
        Eigen::Quaterniond EigenQuat(mat);
        quats = EigenQuat;
@@ -389,7 +465,6 @@ void method()
       // projected to image plane
        cv::line(im, imagePoints[0],StomionPoint2D[0] , cv::Scalar(255,0,0), 2);
 
-
        std::vector<cv::Point2d> reprojectedPoints;
        cv::projectPoints(modelPoints3D, rotationVector1, translationVector1, cameraMatrix, distCoeffs, reprojectedPoints);
        //cv::projectPoints(modelPoints3DReal, rotationVector, translationVector, cameraMatrix, distCoeffs, reprojectedPoints);
@@ -425,7 +500,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
       im = cv_bridge::toCvShare(msg, "bgr8")->image;
       imgCallbackBool=true;
-      method();
+      detect_face();
 
   }
   catch (cv_bridge::Exception& e)
