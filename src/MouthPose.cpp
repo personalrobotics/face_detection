@@ -250,6 +250,8 @@ void detect_face()
 
       // from image callback
 
+      float rotAngle = 0.0f;
+
        // Process frames at an interval of SKIP_FRAMES.
       // This value should be set depending on your system hardware
       // and camera fps.
@@ -258,8 +260,29 @@ void detect_face()
       {
         // Detect faces
         faces  = detector(cimgSmall);
-
         std::vector<dlib::rectangle> faceRects = faceDetector(dlibIm);
+      }
+
+
+      // check for rotation
+      if (faces.size() == 0) {
+        //cout << "[Rotation] No faces detected, attempting rotations." << endl;
+        cv::Mat imRot;
+        cv::Point2f center(imSmall.cols/2.0, imSmall.rows/2.0);
+        static float angles[2] = {-55.0f, 55.0f};
+        for(int i = 0; i < 2; i++) {
+          //cout << "[Rotation] Rotating by (degrees): " << angles[i] << endl;
+          cv::Mat rot = cv::getRotationMatrix2D(center, angles[i], 1.0);
+          cv::warpAffine(imSmall, imRot, rot, imSmall.size());
+          cv_image<bgr_pixel> cimgRot(imRot);
+          faces = detector(cimgRot);
+          if(faces.size() > 0) {
+            // Detected a face! Rotate bounding rectangle back
+            //cout << "[Rotation] Detected face at (degrees): " << angles[i] << endl;
+            rotAngle = angles[i];
+            break; // No need to rotate other direction
+          }
+        }
       }
 
       // Pose estimation
