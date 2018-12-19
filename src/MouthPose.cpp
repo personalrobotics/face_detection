@@ -294,10 +294,10 @@ void detect_face()
     dlib::rectangle bbox = faces[0];
     // modify the dlib rect to opencv rect
     box = cv::Rect2d(
-                    (long)bbox.left(),
-                    (long)bbox.top() ,
-                    (long)bbox.width(),
-                    (long)bbox.height()
+                    (long)bbox.left()*FACE_DOWNSAMPLE_RATIO,
+                    (long)bbox.top()*FACE_DOWNSAMPLE_RATIO ,
+                    (long)bbox.width()*FACE_DOWNSAMPLE_RATIO,
+                    (long)bbox.height()*FACE_DOWNSAMPLE_RATIO
                     );
 
 
