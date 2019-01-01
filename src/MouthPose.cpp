@@ -40,6 +40,7 @@ using namespace sensor_msgs;
 bool depthCallbackBool=false;
 bool imgCallbackBool=false;
 bool recieved=false;
+bool not_initialized=true;
 
 cv::Mat depth_mat;
 
@@ -92,6 +93,10 @@ cv::Mat_<double> cameraMatrix(3,3);
 // NOTE : GOTURN implementation is buggy and does not work.
 const char *types[] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN"};
 
+// Define a few colors for drawing
+cv::Scalar red(0,0,255);
+cv::Scalar blue(255,128,0);
+
 
 // easy way to access trackers!
 // create tracker by name
@@ -122,6 +127,11 @@ cv::Ptr<Tracker> createTrackerByName(string trackerType) {
   // }
   return tracker;
 }
+
+// Create a tracker
+std::vector <string> trackerTypes(types, std::end(types));
+string trackerType = trackerTypes[2];
+cv::Ptr<Tracker> tracker = createTrackerByName(trackerType);
 
 // Distance funtion to obtain relative distances/co-ordinates for the 3D model points in the real world
 
@@ -260,10 +270,10 @@ void detect_face()
       {
         // Detect faces
         faces  = detector(cimgSmall);
-        std::vector<dlib::rectangle> faceRects = faceDetector(dlibIm);
+        //std::vector<dlib::rectangle> faceRects = faceDetector(dlibIm);
       }
 
-
+/*
       // check for rotation
       if (faces.size() == 0) {
         //cout << "[Rotation] No faces detected, attempting rotations." << endl;
@@ -283,7 +293,7 @@ void detect_face()
             break; // No need to rotate other direction
           }
         }
-      }
+      } */
 
       // Pose estimation
 
@@ -295,7 +305,67 @@ void detect_face()
 
       cv::Rect2d box;
 
-      for (unsigned long i = 0; i < faces.size(); ++i)
+      if(not_initialized)
+        {
+
+        do
+        {
+
+        if ( counter % SKIP_FRAMES == 0 )
+        {
+        // Detect faces
+        faces  = detector(cimgSmall);
+        //std::vector<dlib::rectangle> faceRects = faceDetector(dlibIm);
+        }
+
+         //dlib::rectangle bbox = faceRects[0];
+        dlib::rectangle bbox = faces[0];
+        // modify the dlib rect to opencv rect
+        box = cv::Rect2d(
+                        (long)bbox.left()*FACE_DOWNSAMPLE_RATIO,
+                        (long)bbox.top()*FACE_DOWNSAMPLE_RATIO ,
+                        (long)bbox.width()*FACE_DOWNSAMPLE_RATIO,
+                        (long)bbox.height()*FACE_DOWNSAMPLE_RATIO
+                        );
+
+        }
+        while(faces.size() == 0);
+
+        // tracking start
+
+        // Initialize tracker
+        tracker->init(im, box);
+
+        // Display bounding box.
+        cv::rectangle(im, box, blue, 2, 1 );
+
+        not_initialized=false;
+
+
+        }
+        else
+        {
+
+        // Update the tracking result
+        bool success = tracker->update(im, box);
+
+        if (success)
+        {
+          // Tracking success : Draw the tracked object
+          cv::rectangle(im, box, Scalar( 255, 0, 0 ), 2, 1 );
+        }
+        else
+        {
+          // Tracking failure detected.
+          putText(im, "Tracking failure detected", Point(20,80), FONT_HERSHEY_SIMPLEX, 0.75, red,2);
+        }
+
+        // Display tracker type on frame
+        putText(im, trackerType + " Tracker", Point(20,20), FONT_HERSHEY_SIMPLEX, 0.75, blue,2);
+        // tracking end
+        }
+
+      for (unsigned long i = 0; i < faces.size(); i++)
       {
        abscissae.clear();
        ordinates.clear();
@@ -303,53 +373,22 @@ void detect_face()
        WorldFrameOrdinates.clear();
        WorldFrameAbscissae.clear();
        RealWorld3D.clear();
+
        // Since we ran face detection on a resized image,
        // we will scale up coordinates of face rectangle
        dlib::rectangle r(
-              (long)(faces[i].left() * FACE_DOWNSAMPLE_RATIO),
-              (long)(faces[i].top() * FACE_DOWNSAMPLE_RATIO),
-              (long)(faces[i].right() * FACE_DOWNSAMPLE_RATIO),
-              (long)(faces[i].bottom() * FACE_DOWNSAMPLE_RATIO)
+              (long)(faces[0].left() * FACE_DOWNSAMPLE_RATIO),
+              (long)(faces[0].top() * FACE_DOWNSAMPLE_RATIO),
+              (long)(faces[0].right() * FACE_DOWNSAMPLE_RATIO),
+              (long)(faces[0].bottom() * FACE_DOWNSAMPLE_RATIO)
               );
-
-
-    //dlib::rectangle bbox = faceRects[0];
-    dlib::rectangle bbox = faces[0];
-    // modify the dlib rect to opencv rect
-    box = cv::Rect2d(
-                    (long)bbox.left()*FACE_DOWNSAMPLE_RATIO,
-                    (long)bbox.top()*FACE_DOWNSAMPLE_RATIO ,
-                    (long)bbox.width()*FACE_DOWNSAMPLE_RATIO,
-                    (long)bbox.height()*FACE_DOWNSAMPLE_RATIO
-                    );
-
 
        // Find face landmarks by providing rectangle for each face
        full_object_detection shape = predictor(cimg, r);
        shapes.push_back(shape);
 
-       // Draw landmarks over face
+       // Draw Landmarks on Face
        renderFace(im, shape);
-
-        // tracking start
-        // Create a tracker
-        std::vector <string> trackerTypes(types, std::end(types));
-        string trackerType = trackerTypes[2];
-        cv::Ptr<Tracker> tracker = createTrackerByName(trackerType);
-
-        // Initialize tracker
-        tracker->init(im, box);
-
-        // Define a few colors for drawing
-        cv::Scalar red(0,0,255);
-        cv::Scalar blue(255,128,0);
-
-        // Display bounding box.
-        cv::rectangle(im, box, blue, 2, 1 );
-        // tracking end
-
-
-       //modelPoints3D.clear();
 
        // get 2D landmarks from Dlib's shape object
        std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
@@ -390,7 +429,7 @@ void detect_face()
        RealWorld3D.push_back(cv::Point3d(WorldFrameAbscissae[k],WorldFrameOrdinates[k],WorldFrameApplicates[k]));
 
        modelPoints3D = get3dModelPoints();
-       modelPoints3DReal=get3dRealModelPoints();
+       modelPoints3DReal = get3dRealModelPoints();
 
        // calculate rotation and translation vector using solvePnP
 
