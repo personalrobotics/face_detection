@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+
+CATKIN_IGNORE
+
+

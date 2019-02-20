@@ -223,9 +223,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
       cv::Mat R;
 
-
-      cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs,
-                   rotationVector, translationVector);
+      cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs, rotationVector,translationVector);
 
       Eigen::Vector3d Translate;
 
@@ -241,7 +239,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
       Eigen::Matrix3d mat;
       cv::cv2eigen(R, mat);
       mat=zRot*mat;
-
       Eigen::Quaterniond EigenQuat(mat);
 
       quats = EigenQuat;
