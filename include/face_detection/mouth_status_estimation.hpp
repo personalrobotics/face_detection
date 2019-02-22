@@ -2,6 +2,7 @@
 #define MOUTH_STATUS_
 
 #include <dlib/opencv.h>
+#include <dlib/image_processing.h>
 #include <opencv2/opencv.hpp>
 
 std::vector<cv::Point2d> get2dmouthPoints(dlib::full_object_detection &d) {

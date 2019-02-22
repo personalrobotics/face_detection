@@ -300,7 +300,7 @@ void publishMarker(float tx, float ty, float tz) {
   new_marker.scale.z = 1;
 
   new_marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-  new_marker.mesh_resource = "package://pr_ordata/data/objects/tom.dae";
+  new_marker.mesh_resource = "package://pr_assets/data/objects/tom.dae";
   new_marker.action = visualization_msgs::Marker::ADD;
   new_marker.id = 1;
   new_marker.header.stamp = ros::Time();
@@ -314,13 +314,13 @@ void publishMarker(float tx, float ty, float tz) {
     cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
                 cv::FONT_HERSHEY_COMPLEX, 1.5, cv::Scalar(0, 0, 255), 3);
     // Grab the mouth status when the mouth is open
-    new_marker.text = "{\"mouth-status\": \"open\"}";
+    new_marker.text = "{\"db_key\": \"mouth\", \"mouth-status\": \"open\"}";
     new_marker.ns = "mouth";
   } else {
     cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
                 cv::FONT_HERSHEY_COMPLEX, 1.5, cv::Scalar(0, 0, 255), 3);
     // Grab the mouth status when the mouth is closed
-    new_marker.text = "{\"mouth-status\": \"closed\"}";
+    new_marker.text = "{\"db_key\": \"mouth\", \"mouth-status\": \"closed\"}";
     new_marker.ns = "mouth";
   }
 
