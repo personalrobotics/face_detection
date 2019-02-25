@@ -220,7 +220,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
       // Draw landmarks over face
       // renderFace(im, shape);
       renderFace(im, imagePoints, cv::Scalar(255, 200, 0));
-      cv::rectangle(im, dlibRectangleToOpenCV(r), cv::Scalar(0, 255, 0));
+      //cv::rectangle(im, dlibRectangleToOpenCV(r), cv::Scalar(0, 255, 0));
 
       stommionPointX = imagePoints[0].x;
       stommionPointY = imagePoints[0].y;
