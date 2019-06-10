@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef _MOUTHPOSE_H_
-#define _MOUTHPOSE_H_
+#ifndef _GLOBAL_H_
+#define _GLOBAL_H_
 
 #include "std_msgs/String.h"
 #include <Eigen/Dense>
@@ -60,4 +60,4 @@ void renderFace(cv::Mat &img,                            // Image to draw the po
                 cv::Scalar color,                       // color points
                 int radius = 3);                        // Radius of points.
 
-#endif  // _MOUTHPOSE_H_
+#endif  // _GLOBAL_H_

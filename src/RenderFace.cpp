@@ -1,4 +1,4 @@
-#include "MouthPose.hpp"
+#include "global.hpp"
 
 // Draw an open or closed polygon between
 // start and end indices of full_object_detection
