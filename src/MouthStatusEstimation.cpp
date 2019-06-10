@@ -1,9 +1,4 @@
-#ifndef MOUTH_STATUS_
-#define MOUTH_STATUS_
-
-#include <dlib/opencv.h>
-#include <dlib/image_processing.h>
-#include <opencv2/opencv.hpp>
+#include "MouthPose.hpp"
 
 std::vector<cv::Point2d> get2dmouthPoints(dlib::full_object_detection &d) {
   std::vector<cv::Point2d> mouthPoints;
@@ -56,5 +51,3 @@ bool checkMouth(dlib::full_object_detection &shape) {
   return (mouthOpen);
   // Print bool : mouth open, closed
 }
-
-#endif

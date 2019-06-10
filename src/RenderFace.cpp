@@ -1,13 +1,9 @@
-
-#ifndef BIGVISION_renderFace_H_
-#define BIGVISION_renderFace_H_
-#include <dlib/image_processing/frontal_face_detector.h>
-#include <opencv2/opencv.hpp>
+#include "MouthPose.hpp"
 
 // Draw an open or closed polygon between
 // start and end indices of full_object_detection
 void drawPolyline(cv::Mat &img, const dlib::full_object_detection &landmarks,
-                  const int start, const int end, bool isClosed = false) {
+                  const int start, const int end, bool isClosed) {
   std::vector<cv::Point> points;
   for (int i = start; i <= end; ++i) {
     points.push_back(cv::Point(landmarks.part(i).x(), landmarks.part(i).y()));
@@ -33,12 +29,10 @@ void renderFace(cv::Mat &img, const dlib::full_object_detection &landmarks) {
 void renderFace(cv::Mat &img, // Image to draw the points on
                 const std::vector<cv::Point2d> &points, // Vector of points
                 cv::Scalar color,                       // color points
-                int radius = 3)                         // Radius of points.
+                int radius)                         // Radius of points.
 {
 
   for (int i = 0; i < points.size(); i++) {
     cv::circle(img, points[i], radius, color, -1);
   }
 }
-
-#endif // BIGVISION_renderFace_H_
