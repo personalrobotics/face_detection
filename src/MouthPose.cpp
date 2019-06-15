@@ -5,7 +5,7 @@ using namespace std;
 using namespace sensor_msgs;
 
 #define FACE_DOWNSAMPLE_RATIO 2
-#define SKIP_FRAMES 1
+#define SKIP_FRAMES 30
 #define OPENCV_FACE_RENDER
 
 static float rotateFace();
@@ -70,6 +70,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv_image<bgr_pixel> cimgSmall(imSmall);
     cv_image<bgr_pixel> cimg(im);
 
+    matrix<rgb_pixel> matrix;
+    assign_image(matrix, cimgSmall);
+
     float rotAngle = 0.0f;
 
     // Process frames at an interval of SKIP_FRAMES.
@@ -79,6 +82,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     if (counter % SKIP_FRAMES == 0) {
       // Detect faces
       faces = detector(cimgSmall);
+
       if (faces.size() == 0) {
         // if no faces detected, rotate frame to find faces
         // and rotate image back to original
@@ -115,6 +119,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
       // Find face landmarks by providing rectangle for each face
       full_object_detection shape = predictor(cimgRot, r);
 
+
       // get 2D landmarks from Dlib's shape object
       std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
 
@@ -131,7 +136,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
       // renderFace(im, shape);
       renderFace(im, imagePoints, cv::Scalar(255, 200, 0));
       cv::rectangle(im, cvRectRotated, cv::Scalar( 255, 0, 0 ));
-      // cv::rectangle(im, dlibRectangleToOpenCV(r), cv::Scalar(0, 255, 0));
 
       stomionPointX = imagePoints[0].x;
       stomionPointY = imagePoints[0].y;
@@ -169,6 +173,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
       // mouth status display
       mouthOpen = checkMouth(shape);
+
     }
 
     firstTimeImage = false;
@@ -246,12 +251,14 @@ void publishMarker(float tx, float ty, float tz) {
     // Grab the mouth status when the mouth is open
     new_marker.text = "{\"db_key\": \"mouth\", \"mouth-status\": \"open\"}";
     new_marker.ns = "mouth";
+    std::cout << "OPEN" << std::endl;
   } else {
     cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
                 cv::FONT_HERSHEY_COMPLEX, 1.5, cv::Scalar(0, 0, 255), 3);
     // Grab the mouth status when the mouth is closed
     new_marker.text = "{\"db_key\": \"mouth\", \"mouth-status\": \"closed\"}";
     new_marker.ns = "mouth";
+    std::cout << "CLOSED" << std::endl;
   }
 
   new_marker.header.frame_id = "/camera_color_optical_frame";
@@ -396,6 +403,7 @@ int main(int argc, char **argv) {
     std::string path = ros::package::getPath("face_detection");
     deserialize(path + "/model/shape_predictor_68_face_landmarks.dat") >>
         predictor;
+    deserialize(path + "/model/mmod_human_face_detector.dat") >> net;
     ros::Subscriber sub_info =
         nh->subscribe("/camera/color/camera_info", 1, cameraInfo);
     image_transport::Subscriber sub =

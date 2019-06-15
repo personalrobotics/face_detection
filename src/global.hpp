@@ -7,24 +7,35 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <cv_bridge/cv_bridge.h>
+#include <iostream>
 #include <dlib/gui_widgets.h>
 #include <dlib/image_processing.h>
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/opencv.h>
+#include <dlib/dnn.h>
+#include <dlib/data_io.h>
 #include <image_transport/image_transport.h>
 #include <mutex>
 #include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/eigen.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+// #include <opencv2/core/core.hpp>
+// #include <opencv2/core/eigen.hpp>
+// #include <opencv2/highgui/highgui.hpp>
+// #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/dnn.hpp>
 #include <ros/package.h>
 #include <ros/ros.h>
 #include <sstream>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <string>
+#include <vector>
+#include <stdlib.h>
+
 
 // ModelPoints.cpp
 // 3D Model Points of selected landmarks in an arbitrary frame of reference
