@@ -403,7 +403,6 @@ int main(int argc, char **argv) {
     std::string path = ros::package::getPath("face_detection");
     deserialize(path + "/model/shape_predictor_68_face_landmarks.dat") >>
         predictor;
-    deserialize(path + "/model/mmod_human_face_detector.dat") >> net;
     ros::Subscriber sub_info =
         nh->subscribe("/camera/color/camera_info", 1, cameraInfo);
     image_transport::Subscriber sub =
