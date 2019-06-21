@@ -11,32 +11,32 @@ using namespace sensor_msgs;
 static float rotateFace();
 
 // global declarations
-int counter = 0;
-uint32 stomionPointX, stomionPointY;
-Eigen::Quaterniond quats;
-uint32 betweenEyesPointX, betweenEyesPointY;
-int indexStomion, indexLeftEyeLid, indexRightEyeLid;
-cv::Mat rotationVector;
-cv::Mat translationVector;
-std::unique_ptr<ros::NodeHandle> nh;
+static int counter = 0;
+static uint32 stomionPointX, stomionPointY;
+static Eigen::Quaterniond quats;
+static uint32 betweenEyesPointX, betweenEyesPointY;
+static int indexStomion, indexLeftEyeLid, indexRightEyeLid;
+static cv::Mat rotationVector;
+static cv::Mat translationVector;
+static std::unique_ptr<ros::NodeHandle> nh;
 
-bool mouthOpen;               // store status of mouth being open or closed
-cv::Mat im;                   // matrix to store the image
-std::vector<rectangle> faces; // variable to store face rectangles
-cv::Mat imSmall, imDisplay;   // matrices to store the resized image to oprate on and display
+static bool mouthOpen;               // store status of mouth being open or closed
+static cv::Mat im;                   // matrix to store the image
+static std::vector<rectangle> faces; // variable to store face rectangles
+static cv::Mat imSmall, imDisplay;   // matrices to store the resized image to oprate on and display
 
 // Load face detection and pose estimation models.
-frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
-shape_predictor predictor;
+static frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
+static shape_predictor predictor;
 
-ros::Publisher marker_array_pub;
+static ros::Publisher marker_array_pub;
 
-cv::Mat_<double> distCoeffs(5, 1);
-cv::Mat_<double> cameraMatrix(3, 3);
+static cv::Mat_<double> distCoeffs(5, 1);
+static cv::Mat_<double> cameraMatrix(3, 3);
 
-double oldX, oldY, oldZ;
-bool firstTimeDepth = true;
-bool firstTimeImage = true;
+static double oldX, oldY, oldZ;
+static bool firstTimeDepth = true;
+static bool firstTimeImage = true;
 
 static cv::Rect dlibRectangleToOpenCV(rectangle r) {
   return cv::Rect(cv::Point2i(r.left(), r.top()),
@@ -118,7 +118,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
       // Find face landmarks by providing rectangle for each face
       full_object_detection shape = predictor(cimgRot, r);
-
 
       // get 2D landmarks from Dlib's shape object
       std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
