@@ -3,6 +3,7 @@
 using namespace dlib;
 using namespace std;
 using namespace sensor_msgs;
+using namespace cv::dnn;
 
 #define FACE_DOWNSAMPLE_RATIO 2
 #define SKIP_FRAMES 30
@@ -10,33 +11,49 @@ using namespace sensor_msgs;
 
 static float rotateFace();
 
-// global declarations
-static int counter = 0;
-static uint32 stomionPointX, stomionPointY;
-static Eigen::Quaterniond quats;
-static uint32 betweenEyesPointX, betweenEyesPointY;
-static int indexStomion, indexLeftEyeLid, indexRightEyeLid;
-static cv::Mat rotationVector;
-static cv::Mat translationVector;
-static std::unique_ptr<ros::NodeHandle> nh;
+const size_t inWidth = 300;
+const size_t inHeight = 300;
+const double inScaleFactor = 1.0;
+const float confidenceThreshold = 0.7;
+const cv::Scalar meanVal(104.0, 177.0, 123.0);
+std::vector<dlib::rectangle> detectFaceOpenCVDNN(Net net, cv::Mat &frameOpenCVDNN);
 
-static bool mouthOpen;               // store status of mouth being open or closed
-static cv::Mat im;                   // matrix to store the image
-static std::vector<rectangle> faces; // variable to store face rectangles
-static cv::Mat imSmall, imDisplay;   // matrices to store the resized image to oprate on and display
+#define CAFFE 1
+
+const std::string caffeConfigFile = "/model/deploy.prototxt";
+const std::string caffeWeightFile = "/model/res10_300x300_ssd_iter_140000_fp16.caffemodel";
+
+const std::string tensorflowConfigFile = "/model/opencv_face_detector.pbtxt";
+const std::string tensorflowWeightFile = "/model/opencv_face_detector_uint8.pb";
+
+// global declarations
+int counter = 0;
+uint32 stomionPointX, stomionPointY;
+Eigen::Quaterniond quats;
+uint32 betweenEyesPointX, betweenEyesPointY;
+int indexStomion, indexLeftEyeLid, indexRightEyeLid;
+cv::Mat rotationVector;
+cv::Mat translationVector;
+std::unique_ptr<ros::NodeHandle> nh;
+
+bool mouthOpen;               // store status of mouth being open or closed
+cv::Mat im;                   // matrix to store the image
+std::vector<dlib::rectangle> faces; // variable to store face rectangles
+cv::Mat imSmall, imDisplay;   // matrices to store the resized image to oprate on and display
 
 // Load face detection and pose estimation models.
-static frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
-static shape_predictor predictor;
+frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
+shape_predictor predictor;
+Net net;
 
-static ros::Publisher marker_array_pub;
+ros::Publisher marker_array_pub;
 
-static cv::Mat_<double> distCoeffs(5, 1);
-static cv::Mat_<double> cameraMatrix(3, 3);
+cv::Mat_<double> distCoeffs(5, 1);
+cv::Mat_<double> cameraMatrix(3, 3);
 
-static double oldX, oldY, oldZ;
-static bool firstTimeDepth = true;
-static bool firstTimeImage = true;
+double oldX, oldY, oldZ;
+bool firstTimeDepth = true;
+bool firstTimeImage = true;
 
 static cv::Rect dlibRectangleToOpenCV(rectangle r) {
   return cv::Rect(cv::Point2i(r.left(), r.top()),
@@ -81,7 +98,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     // To reduce computations, this value should be increased
     if (counter % SKIP_FRAMES == 0) {
       // Detect faces
-      faces = detector(cimgSmall);
+      // faces = detector(cimgSmall);
+      faces = detectFaceOpenCVDNN(net, im);
 
       if (faces.size() == 0) {
         // if no faces detected, rotate frame to find faces
@@ -118,6 +136,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
       // Find face landmarks by providing rectangle for each face
       full_object_detection shape = predictor(cimgRot, r);
+
 
       // get 2D landmarks from Dlib's shape object
       std::vector<cv::Point2d> imagePoints = get2dImagePoints(shape);
@@ -185,6 +204,38 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
   } catch (cv_bridge::Exception &e) {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
+}
+
+std::vector<rectangle> detectFaceOpenCVDNN(Net net, cv::Mat &frameOpenCVDNN)
+{
+    int frameHeight = frameOpenCVDNN.rows;
+    int frameWidth = frameOpenCVDNN.cols;
+#ifdef CAFFE
+        cv::Mat inputBlob = cv::dnn::blobFromImage(frameOpenCVDNN, inScaleFactor, cv::Size(inWidth, inHeight), meanVal, false, false);
+#else
+        cv::Mat inputBlob = cv::dnn::blobFromImage(frameOpenCVDNN, inScaleFactor, cv::Size(inWidth, inHeight), meanVal, true, false);
+#endif
+
+    net.setInput(inputBlob, "data");
+    cv::Mat detection = net.forward("detection_out");
+
+    cv::Mat detectionMat(detection.size[2], detection.size[3], CV_32F, detection.ptr<float>());
+    std::vector<dlib::rectangle> facesAboveThreshold;
+    for(int i = 0; i < detectionMat.rows; i++)
+    {
+        float confidence = detectionMat.at<float>(i, 2);
+
+        if(confidence > confidenceThreshold)
+        {
+            int x1 = static_cast<int>(detectionMat.at<float>(i, 3) * frameWidth);
+            int y1 = static_cast<int>(detectionMat.at<float>(i, 4) * frameHeight);
+            int x2 = static_cast<int>(detectionMat.at<float>(i, 5) * frameWidth);
+            int y2 = static_cast<int>(detectionMat.at<float>(i, 6) * frameHeight);
+
+            // facesAboveThreshold.push_back(openCVRectToDlib(cv::Rect(cv::Point(x1, y1), cv::Point(x2, y2))));
+        }
+    }
+    return facesAboveThreshold;
 }
 
 static float rotateFace() {
@@ -394,14 +445,20 @@ void cameraInfo(const sensor_msgs::CameraInfoConstPtr &msg) {
 
 int main(int argc, char **argv) {
   try {
+    std::string path = ros::package::getPath("face_detection");
+    #ifdef CAFFE
+      net = cv::dnn::readNetFromCaffe(path + caffeConfigFile, path + caffeWeightFile);
+    #else
+      net = cv::dnn::readNetFromTensorflow(path + tensorflowWeightFile, path + tensorflowConfigFile);
+    #endif
     ros::init(argc, argv, "image_listener");
     nh = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle);
     image_transport::ImageTransport it(*nh);
 
     std::string MarkerTopic = "/camera/color/image_raw";
-    std::string path = ros::package::getPath("face_detection");
-    deserialize(path + "/model/shape_predictor_68_face_landmarks.dat") >>
-        predictor;
+    // deserialize(path + "/model/shape_predictor_68_face_landmarks.dat") >>
+    //    predictor;
+    // deserialize(path + "/model/mmod _human_face_detector.dat") >> net;
     ros::Subscriber sub_info =
         nh->subscribe("/camera/color/camera_info", 1, cameraInfo);
     image_transport::Subscriber sub =
