@@ -40,7 +40,8 @@ std::unique_ptr<ros::NodeHandle> nh;
 bool mouthOpen;               // store status of mouth being open or closed
 cv::Mat im;                   // matrix to store the image
 std::vector<rectangle> faces; // variable to store face rectangles
-cv::Mat imSmall, imDisplay;   // matrices to store the resized image to oprate on and display
+cv::Mat imSmall, imOpenCVDNN, imDisplay;   // matrices to store the resized image to oprate on and display
+
 
 // Load face detection and pose estimation models.
 frontal_face_detector detector = get_frontal_face_detector(); // get the frontal face
@@ -77,12 +78,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
   }
   try {
     im = cv_bridge::toCvShare(msg, "bgr8")->image;
+    cout << "Dims " << im.dims << endl;
 
     // cv::rotate(im, im, cv::ROTATE_90_COUNTERCLOCKWISE);
 
     // Create imSmall by resizing image for face detection
     cv::resize(im, imSmall, cv::Size(), 1.0 / FACE_DOWNSAMPLE_RATIO,
                1.0 / FACE_DOWNSAMPLE_RATIO);
+    cv::resize(im, imOpenCVDNN, cv::Size(300, 300), 0, 0);
 
     // Change to dlib's image format. No memory is copied.
     cv_image<bgr_pixel> cimgSmall(imSmall);
@@ -100,7 +103,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     if (counter % SKIP_FRAMES == 0) {
       // Detect faces
       // faces = detector(cimgSmall);
-      faces = detectFaceOpenCVDNN(net, im);
+      if (im.empty())
+        return;
+      cout << "imageCallBack" << endl;
+      faces = detectFaceOpenCVDNN(net, imOpenCVDNN);
 
       if (faces.size() == 0) {
         // if no faces detected, rotate frame to find faces
@@ -209,6 +215,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
 std::vector<rectangle> detectFaceOpenCVDNN(Net net, cv::Mat &frameOpenCVDNN)
 {
+    cout << "detectFaceOpenCVDNN" << endl;
     int frameHeight = frameOpenCVDNN.rows;
     int frameWidth = frameOpenCVDNN.cols;
 #ifdef CAFFE
@@ -216,10 +223,11 @@ std::vector<rectangle> detectFaceOpenCVDNN(Net net, cv::Mat &frameOpenCVDNN)
 #else
         cv::Mat inputBlob = cv::dnn::blobFromImage(frameOpenCVDNN, inScaleFactor, cv::Size(inWidth, inHeight), meanVal, true, false);
 #endif
-
+    cout << "setInput" << endl;
     net.setInput(inputBlob, "data");
+    cout << "net forward" << endl;
     cv::Mat detection = net.forward("detection_out");
-
+    cout << "detection mat" << endl;
     cv::Mat detectionMat(detection.size[2], detection.size[3], CV_32F, detection.ptr<float>());
     std::vector<rectangle> facesAboveThreshold;
     for(int i = 0; i < detectionMat.rows; i++)
@@ -460,14 +468,17 @@ int main(int argc, char **argv) {
     deserialize(path + "/model/shape_predictor_68_face_landmarks.dat") >>
         predictor;
     // deserialize(path + "/model/mmod_human_face_detector.dat") >> net;
+    cout << "Subscribing to cameraInfo" << endl;
     ros::Subscriber sub_info =
         nh->subscribe("/camera/color/camera_info", 1, cameraInfo);
+    cout << "Subscribing to imageCallback" << endl;
     image_transport::Subscriber sub =
         it.subscribe("/camera/color/image_raw", 1, imageCallback,
                      image_transport::TransportHints("compressed"));
-
+    cout << "Subscribing to DepthCallBack" << endl;
     ros::Subscriber sub_depth = nh->subscribe(
         "/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
+    cout << "Subscribing to MarkerArray" << endl;
     marker_array_pub =
         nh->advertise<visualization_msgs::MarkerArray>("face_pose", 1);
 
