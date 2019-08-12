@@ -13,7 +13,7 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/opencv.h>
-#include <dlib/dnn.h>
+// #include <dlib/dnn.h>
 #include <dlib/data_io.h>
 #include <image_transport/image_transport.h>
 #include <mutex>
@@ -26,7 +26,7 @@
 // #include <opencv2/core.hpp>
 // #include <opencv2/imgproc.hpp>
 // #include <opencv2/highgui.hpp>
-#include <opencv2/dnn.hpp>
+// #include <opencv2/dnn.hpp>
 #include <ros/package.h>
 #include <ros/ros.h>
 #include <sstream>
