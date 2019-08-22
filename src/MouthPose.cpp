@@ -394,7 +394,7 @@ void cameraInfo(const sensor_msgs::CameraInfoConstPtr &msg) {
 
 int main(int argc, char **argv) {
   try {
-    ros::init(argc, argv, "image_listener");
+    ros::init(argc, argv, "face_detector");
     nh = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle);
     image_transport::ImageTransport it(*nh);
 
@@ -411,7 +411,7 @@ int main(int argc, char **argv) {
     ros::Subscriber sub_depth = nh->subscribe(
         "/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
     marker_array_pub =
-        nh->advertise<visualization_msgs::MarkerArray>("face_pose", 1);
+        nh->advertise<visualization_msgs::MarkerArray>("marker_array", 1);
 
     ros::spin();
   } catch (serialization_error &e) {
