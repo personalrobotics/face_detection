@@ -411,7 +411,7 @@ int main(int argc, char **argv) {
     ros::Subscriber sub_depth = nh->subscribe(
         "/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
     marker_array_pub =
-        nh->advertise<visualization_msgs::MarkerArray>("marker_array", 1);
+        nh->advertise<visualization_msgs::MarkerArray>("/face_detector/marker_array", 1);
 
     ros::spin();
   } catch (serialization_error &e) {
