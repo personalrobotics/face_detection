@@ -109,7 +109,9 @@ int main(int argc, char** argv) {
         
         // Set the bounding box of the mouth.
         // This will be our initial region of interest
-        bbox = Rect2d(x1, y1, x2-x1, y2-y1);
+        int width = x2 - x1;
+        int height = y2 - y1;
+        bbox = Rect2d(x1, y1 - height / 2, width, height * 2);
     }
     catch (exception& e)
     {
