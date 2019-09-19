@@ -48,6 +48,8 @@ static rectangle openCVRectToDlib(cv::Rect r) {
                          (long)r.br().y - 1);
 }
 
+void DepthCallBack();
+
 void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) {
@@ -166,9 +168,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
       quats = EigenQuat;
 
+      /*
       auto euler = quats.toRotationMatrix().eulerAngles(0, 1, 2);
       std::cout << "Euler from quaternion in roll, pitch, yaw" << std::endl
                 << euler << std::endl;
+      */
 
       // mouth status display
       mouthOpen = checkMouth(shape);
@@ -181,6 +185,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv::resize(im, imDisplay, cv::Size(), 1, 1);
     cv::imshow("Face Pose Detector", imDisplay);
     cv::waitKey(30);
+
+    DepthCallBack();
 
   } catch (cv_bridge::Exception &e) {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
@@ -245,15 +251,11 @@ void publishMarker(float tx, float ty, float tz) {
 
   // mouth status display
   if (mouthOpen == true) {
-    cv::putText(im, cv::format("OPEN"), cv::Point(450, 50),
-                cv::FONT_HERSHEY_COMPLEX, 1.5, cv::Scalar(0, 0, 255), 3);
     // Grab the mouth status when the mouth is open
     new_marker.text = "{\"db_key\": \"mouth\", \"mouth-status\": \"open\"}";
     new_marker.ns = "mouth";
     std::cout << "OPEN" << std::endl;
   } else {
-    cv::putText(im, cv::format("CLOSED"), cv::Point(450, 50),
-                cv::FONT_HERSHEY_COMPLEX, 1.5, cv::Scalar(0, 0, 255), 3);
     // Grab the mouth status when the mouth is closed
     new_marker.text = "{\"db_key\": \"mouth\", \"mouth-status\": \"closed\"}";
     new_marker.ns = "mouth";
@@ -268,10 +270,11 @@ void publishMarker(float tx, float ty, float tz) {
     marker_arr.markers.push_back(new_marker);
   } // else no perception
 
+  std::cout << "Publishing Marker!" << std::endl;
   marker_array_pub.publish(marker_arr);
 }
 
-void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros) {
+void DepthCallBack() {
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) {
     facePerceptionOn = true;
@@ -281,13 +284,16 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros) {
     return;
   }
 
-  cv_bridge::CvImageConstPtr depth_img_cv;
+  /*
+
   cv::Mat depth_mat;
+  std::cout << "Got Depth Image... ";
   // Get the ROS image to openCV
-  depth_img_cv = cv_bridge::toCvShare(depth_img_ros,
-                                      sensor_msgs::image_encodings::TYPE_16UC1);
+  auto depth_img_cv = cv_bridge::toCvShare(depth_img_ros, sensor_msgs::image_encodings::TYPE_16UC1);
+  std::cout << "done 1...";
   // Convert the uints to floats
   depth_img_cv->image.convertTo(depth_mat, CV_32F, 0.001);
+  std::cout << "done 2! ";
 
   if (betweenEyesPointX >= depth_mat.cols ||
       betweenEyesPointY >= depth_mat.rows) {
@@ -301,8 +307,10 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros) {
        << "  point between eyes at: (" << betweenEyesPointX << ", "
        << betweenEyesPointY << ") mat: (" << depth_mat.cols << ", "
        << depth_mat.rows << ")" << std::endl;
+  */
 
-  float averageDepth = 0;
+  float averageDepth = 0.45;
+  /*
   int depthCounts = 0;
 
   for (int x = std::max(0, (int)betweenEyesPointX - 4);
@@ -319,13 +327,15 @@ void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros) {
     //  std::cout << std::endl;
   }
   averageDepth /= depthCounts;
+  */
 
   std::cout << "average depth: " << averageDepth << std::endl;
-
+/*
   if (depthCounts == 0) {
     std::cout << "depth between eyes is zero! Skipping..." << std::endl;
     return;
   }
+*/
 
   double cam_fx = cameraMatrix.at<double>(0, 0);
   double cam_fy = cameraMatrix.at<double>(1, 1);
@@ -408,8 +418,7 @@ int main(int argc, char **argv) {
         it.subscribe("/camera/color/image_raw", 1, imageCallback,
                      image_transport::TransportHints("compressed"));
 
-    ros::Subscriber sub_depth = nh->subscribe(
-        "/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
+    //image_transport::Subscriber sub_depth = it.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
     marker_array_pub =
         nh->advertise<visualization_msgs::MarkerArray>("/face_detector/marker_array", 1);
 
