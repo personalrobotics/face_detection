@@ -91,6 +91,9 @@ int main(int argc, char **argv) {
   while (video.read(frame)) {
     // Update the tracking result
     bool success = tracker1->update(frame, mouth_bbox);
+    // Run eye trackers
+    // Results are better if we keep running the eye trackers togther
+    // instead of just running them when mouth tracking fails
     bool left = tracker2->update(frame, left_eye);
     bool right = tracker3->update(frame, right_eye);
 
@@ -103,6 +106,7 @@ int main(int argc, char **argv) {
       // Mouth Tracking failure
       putText(frame, "Failed tracking the mouth", Point(100, 80),
               FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0, 0, 255), 2);
+      
       if(left && right)
       {
         putText(frame, "Estimating mouth from the eyes", Point(100, 120),
@@ -208,7 +212,7 @@ void RunFaceDetection(const Mat &frame, frontal_face_detector &detector, const s
   } catch (exception &e) {
     cout << "\nException while detecting face" << endl;
     cout << e.what() << endl;
-    mouth_bbox = Rect2d(-1, -1, -1, -1);
+    mouth_bbox = Rect2d(-1, -1, -1, -1); // failed face detection
   }
 }
 
