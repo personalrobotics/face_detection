@@ -171,13 +171,13 @@ void RunFaceDetection(const Mat &frame, frontal_face_detector &detector, const s
   try {
     // convert OpenCV's MAT to dlib's array2d
     dlib::array2d<dlib::bgr_pixel> img;
-    dlib::assign_image(img, dlib::cv_image<dlib::bgr_pixel>(frame));
+    dlib::assign_image(img, dlib::cv_image<dlib::bgr_pixel>(cvIplImage(frame)));
 
     // Dectect the faces
     std::vector<dlib::rectangle> dets = detector(img);
     cout << "Number of faces detected: " << dets.size() << endl;
     if (dets.size() == 0) {
-      cerr << "No faces detected" << endl;
+      cerr << "No faces detected" << endl; // rotate 
       mouth_bbox = Rect2d(-1, -1, -1, -1);
       return;
     } else if (dets.size() != 1) {

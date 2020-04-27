@@ -20,13 +20,15 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
+#include <opencv2/core/types.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-// #include <opencv2/opencv.hpp>
-// #include <opencv2/core.hpp>
-// #include <opencv2/imgproc.hpp>
-// #include <opencv2/highgui.hpp>
-// #include <opencv2/dnn.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/dnn.hpp>
+#include <opencv2/tracking.hpp>
 #include <ros/package.h>
 #include <ros/ros.h>
 #include <sstream>
@@ -51,6 +53,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg);
 void publishMarker(float tx, float ty, float tz);
 void DepthCallBack(const sensor_msgs::ImageConstPtr depth_img_ros);
 void cameraInfo(const sensor_msgs::CameraInfoConstPtr &msg);
+bool RunFaceDetection(const cv::Mat &frame, float rotAngle);
+cv::Rect2d GetBoundingBox(std::vector<dlib::image_window::overlay_line> &lines, cv::Mat frame, int start,
+                      int end, float rotAngle);
+void findStomionPoint(int x1, int y1, int x2, int y2);
 int main(int argc, char **argv);
 
 // MouthStatusEstimation.cpp

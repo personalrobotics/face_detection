@@ -9,7 +9,7 @@ project(face_detection)
 ## is used, also find other catkin packages
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -mavx -O3")
 
-find_package( OpenCV REQUIRED )
+find_package( OpenCV 4.2.0 REQUIRED)
 
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
@@ -91,6 +91,7 @@ target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${dlib_LIBRARIES}
+    opencv_tracking
 )
 
 ## Rename C++ executable without prefix
