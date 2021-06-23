@@ -148,8 +148,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
           2;
 
       // calculate rotation and translation vector using solvePnP
-      cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs,
-                         rotationVector, translationVector);
+      try {
+        cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs,
+                           rotationVector, translationVector);
+      } catch(...) {
+        // sometimes solvePnP will return an error, ignore face in that case
+        // See: https://github.com/opencv/opencv/pull/19253
+        continue;
+      }
 
       // Convert rotation vector to rotation matrix
       cv::Mat R; // ouput rotation matrix
