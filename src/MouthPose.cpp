@@ -268,7 +268,7 @@ void publishMarker(float tx, float ty, float tz) {
     std::cout << "CLOSED" << std::endl;
   }
 
-  new_marker.header.frame_id = "/camera_color_optical_frame";
+  new_marker.header.frame_id = "camera_color_optical_frame";
 
   visualization_msgs::MarkerArray marker_arr;
 
