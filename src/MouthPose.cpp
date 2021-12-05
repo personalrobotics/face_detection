@@ -161,7 +161,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
       cv::Mat R; // ouput rotation matrix
       cv::Rodrigues(rotationVector, R);
 
-      Eigen::AngleAxisd rollAngle(3.14159, Eigen::Vector3d::UnitZ());
+      Eigen::AngleAxisd rollAngle(0, Eigen::Vector3d::UnitZ());
       Eigen::AngleAxisd yawAngle(0, Eigen::Vector3d::UnitY());
       Eigen::AngleAxisd pitchAngle(0, Eigen::Vector3d::UnitX());
       Eigen::Quaternion<double> q = rollAngle * yawAngle * pitchAngle;
