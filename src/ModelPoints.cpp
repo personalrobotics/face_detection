@@ -2,7 +2,11 @@
 
 using namespace dlib;
 
-// 3D Model Points of selected landmarks in an arbitrary frame of reference
+// 3D Model Points of selected landmarks in an arbitrary frame of reference (mm units)
+// The sellion, right eye, left eye, right ear, leaft ear, nose, stomion, and menton
+// are from this paper:
+// "Robust face model based approach to head pose estimation", https://ieeexplore.ieee.org/document/8104720
+// We added right eye lid, left eye lid, right lip corner, and left lip corner.
 std::vector<cv::Point3d> get3dModelPoints() {
   std::vector<cv::Point3d> modelPoints;
 
@@ -15,10 +19,10 @@ std::vector<cv::Point3d> get3dModelPoints() {
   modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));      // Nose
   modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
   modelPoints.push_back(cv::Point3d(-10.0, 0., -58.0));    // Menton
-  modelPoints.push_back(cv::Point3d(-10.0, -3.4, 75.0));   // Right Eye Lid
-  modelPoints.push_back(cv::Point3d(-10.0, 3.4, 75.0));    // Left Eye Lid
-  modelPoints.push_back(cv::Point3d(-5.0, -2.5, 0.0));     // Right Lip corner
-  modelPoints.push_back(cv::Point3d(-5.0, 2.5, 0.0));      // Left Lip corner
+  modelPoints.push_back(cv::Point3d(-10.0, -34, 75.0));   // Right Eye Lid
+  modelPoints.push_back(cv::Point3d(-10.0, 34, 75.0));    // Left Eye Lid
+  modelPoints.push_back(cv::Point3d(-5.0, -25, 0.0));     // Right Lip corner
+  modelPoints.push_back(cv::Point3d(-5.0, 25, 0.0));      // Left Lip corner
   modelPoints.push_back(cv::Point3d(-115.0, -77.5, 69.0)); // Right side
   modelPoints.push_back(cv::Point3d(-115.0, 77.5, 69.0));  // Left side
 
