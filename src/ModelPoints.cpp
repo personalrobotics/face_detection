@@ -13,18 +13,18 @@ std::vector<cv::Point3d> get3dModelPoints() {
   // Stommion origin
   // X direction points forward projecting out of the person's stomion
 
-  modelPoints.push_back(cv::Point3d(0., 0., 0.));          // Stommion
-  modelPoints.push_back(cv::Point3d(-30.0, -65.5, 70.0));  // Right Eye
-  modelPoints.push_back(cv::Point3d(-30.0, 65.5, 70.));    // Left Eye
-  modelPoints.push_back(cv::Point3d(11.0, 0., 27.0));      // Nose
-  modelPoints.push_back(cv::Point3d(-10.0, 0.0, 75.0));    // Sellion
-  modelPoints.push_back(cv::Point3d(-10.0, 0., -58.0));    // Menton
-  modelPoints.push_back(cv::Point3d(-10.0, -34, 75.0));   // Right Eye Lid
-  modelPoints.push_back(cv::Point3d(-10.0, 34, 75.0));    // Left Eye Lid
-  modelPoints.push_back(cv::Point3d(-5.0, -25, 0.0));     // Right Lip corner
-  modelPoints.push_back(cv::Point3d(-5.0, 25, 0.0));      // Left Lip corner
-  modelPoints.push_back(cv::Point3d(-115.0, -77.5, 69.0)); // Right side
-  modelPoints.push_back(cv::Point3d(-115.0, 77.5, 69.0));  // Left side
+  modelPoints.push_back(cv::Point3d(   0.0,   0.0,   0.0));  // Stommion
+  modelPoints.push_back(cv::Point3d( -30.0, -65.5,  70.0));  // Right Eye
+  modelPoints.push_back(cv::Point3d( -30.0,  65.5,  70.0));  // Left Eye
+  modelPoints.push_back(cv::Point3d(  11.0,   0.0,  27.0));  // Nose
+  modelPoints.push_back(cv::Point3d( -10.0,   0.0,  75.0));  // Sellion
+  modelPoints.push_back(cv::Point3d( -10.0,   0.0, -58.0));  // Menton
+  modelPoints.push_back(cv::Point3d( -10.0, -34.0,  75.0));  // Right Eye Lid
+  modelPoints.push_back(cv::Point3d( -10.0,  34.0,  75.0));  // Left Eye Lid
+  modelPoints.push_back(cv::Point3d(  -5.0, -25.0,   0.0));  // Right Lip corner
+  modelPoints.push_back(cv::Point3d(  -5.0,  25.0,   0.0));  // Left Lip corner
+  modelPoints.push_back(cv::Point3d(-115.0, -77.5,  69.0));  // Right side
+  modelPoints.push_back(cv::Point3d(-115.0,  77.5,  69.0));  // Left side
 
   return modelPoints;
 }
