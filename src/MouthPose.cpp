@@ -18,6 +18,7 @@ static uint32 betweenEyesPointX, betweenEyesPointY;
 static int indexStomion, indexLeftEyeLid, indexRightEyeLid;
 static cv::Mat rotationVector;
 static cv::Mat translationVector;
+static bool solvedPnP = false;
 static std::unique_ptr<ros::NodeHandle> nh;
 
 static bool mouthOpen;               // store status of mouth being open or closed
@@ -57,6 +58,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
   }
   if (!facePerceptionOn) {
     cv::destroyAllWindows();
+    solvedPnP = false;
     return;
   }
   try {
@@ -149,8 +151,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
       // calculate rotation and translation vector using solvePnP
       try {
-        cv::solvePnPRansac(modelPoints, imagePoints, cameraMatrix, distCoeffs,
-                           rotationVector, translationVector);
+        cv::solvePnP(modelPoints, imagePoints, cameraMatrix, distCoeffs,
+                           rotationVector, translationVector, solvedPnP, cv::SOLVEPNP_ITERATIVE);
+        solvedPnP = true;
       } catch(...) {
         // sometimes solvePnP will return an error, ignore face in that case
         // See: https://github.com/opencv/opencv/pull/19253
