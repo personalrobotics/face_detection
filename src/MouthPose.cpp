@@ -58,6 +58,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
   }
   if (!facePerceptionOn) {
     cv::destroyAllWindows();
+    solvedPnP = false;
     return;
   }
   try {
