@@ -43,7 +43,7 @@ bool checkMouth(dlib::full_object_detection &shape) {
            pow((mouthPoints[4].y - mouthPoints[10].y), 2)) /
           2;
 
-  if (lipDist >= 1.0 * lipThickness) {
+  if (lipDist >= 1.5 * lipThickness) {
     mouthOpen = true;
   } else {
     mouthOpen = false;

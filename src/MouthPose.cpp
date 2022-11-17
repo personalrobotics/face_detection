@@ -195,8 +195,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv::imshow("Face Pose Detector", imDisplay);
     cv::waitKey(30);
 
-    DepthCallBack();
-
   } catch (cv_bridge::Exception &e) {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
@@ -283,7 +281,7 @@ void publishMarker(float tx, float ty, float tz) {
   marker_array_pub.publish(marker_arr);
 }
 
-void DepthCallBack() {
+void DepthCallBack(const sensor_msgs::ImageConstPtr &depth_img_ros) {
   bool facePerceptionOn = true;
   if (!nh || !nh->getParam("/feeding/facePerceptionOn", facePerceptionOn)) {
     facePerceptionOn = true;
@@ -293,7 +291,7 @@ void DepthCallBack() {
     return;
   }
 
-  /*
+  
 
   cv::Mat depth_mat;
   std::cout << "Got Depth Image... ";
@@ -316,10 +314,9 @@ void DepthCallBack() {
        << "  point between eyes at: (" << betweenEyesPointX << ", "
        << betweenEyesPointY << ") mat: (" << depth_mat.cols << ", "
        << depth_mat.rows << ")" << std::endl;
-  */
+  
 
-  float averageDepth = 0.45;
-  /*
+  float averageDepth = 0.0f;
   int depthCounts = 0;
 
   for (int x = std::max(0, (int)betweenEyesPointX - 4);
@@ -335,15 +332,14 @@ void DepthCallBack() {
     }
     //  std::cout << std::endl;
   }
-  averageDepth /= depthCounts;
-  */
-
+  if (depthCounts == 0) {
+    std::cout << "depth between eyes is zero! Using baseline..." << std::endl;
+    averageDepth = 0.45;
+  } else averageDepth /= depthCounts;
+  
   std::cout << "average depth: " << averageDepth << std::endl;
 /*
-  if (depthCounts == 0) {
-    std::cout << "depth between eyes is zero! Skipping..." << std::endl;
-    return;
-  }
+  
 */
 
   double cam_fx = cameraMatrix.at<double>(0, 0);
@@ -427,7 +423,7 @@ int main(int argc, char **argv) {
         it.subscribe("/camera/color/image_raw", 1, imageCallback,
                      image_transport::TransportHints("compressed"));
 
-    //image_transport::Subscriber sub_depth = it.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
+    image_transport::Subscriber sub_depth = it.subscribe("/camera/aligned_depth_to_color/image_raw", 1, DepthCallBack);
     marker_array_pub =
         nh->advertise<visualization_msgs::MarkerArray>("/face_detector/marker_array", 1);
 
